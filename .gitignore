@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/pythonExample.py
+/GetMorphemeKeyValues.py
+/test.py
+etymo_venv/
