@@ -1,0 +1,42 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+.page,
+main,
+article,
+body {
+    height: 100%;
+}
+
+.icon {
+    background-size: 100% 100%;
+    width: 4rem;
+}
+
+/* Default to light mode SVG */
+.icon {
+    background-image: url('etymo_logo_full.svg');
+}
+
+/* Override with dark mode SVG if prefers-color-scheme is dark */
+@media (prefers-color-scheme: dark) {
+    .icon {
+        background-image: url('etymo_logo_full_bianca.svg');
+    }
+}
+
+/*.alert-success {
+    background-color: #83EC93,
+}
+
+
+.alert-warning {
+    background-color: #C2EC83,
+}
+
+.alert-error {
+    background-color: #EC83DC,
+}
+*/

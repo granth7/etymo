@@ -1,0 +1,60 @@
+.stack > * {
+    grid-column-start: 1;
+    grid-row-start: 1;
+    transform: translateY(10%) scale(0.8);
+    z-index: 1;
+    width: 100%;
+    opacity: 1;
+}
+
+.stack > *:nth-child(5) {
+    transform: translateY(5%) scale(0.8);
+    z-index: 1;
+    opacity: 1;
+}
+
+.stack > *:nth-child(4) {
+    transform: translateY(5%) scale(0.85);
+    z-index: 2;
+    opacity: 1;
+}
+
+.stack > *:nth-child(3) {
+    transform: translateY(5%) scale(0.9);
+    z-index: 3;
+    opacity: 1;
+}
+
+.stack > *:nth-child(2) {
+    transform: translateY(5%) scale(0.95);
+    z-index: 4;
+    opacity: 1;
+}
+
+.stack > *:nth-child(1) {
+    transform: translateY(0) scale(1);
+    z-index: 5;
+    opacity: 1;
+}
+
+.btn {
+    margin: 4px 8px;
+}
+
+.radio {
+    margin: 0px 4px;
+}
+
+.collapse {
+    margin: 4px 0px;
+}
+
+.content {
+   padding: 0px 6px;
+}
+
+.grid-item {
+    display: flex; /* new */
+    align-items: center; /* new */
+    justify-content: center; /* new */
+}
