@@ -25,6 +25,9 @@ jobs:
         env: 
           NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
+      - name: Install .NET Aspire workload
+        run: dotnet workload install aspire
+
       - name: Restore dependencies
         run: dotnet restore
 
@@ -38,9 +41,6 @@ jobs:
         if: github.event_name != 'pull_request'
         run:
           docker login ghcr.io -u ${{ github.repository_owner }} --password ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install .NET Aspire workload
-        run: dotnet workload install aspire
 
       - name: Aspire Init
         run: aspirate init --non-interactive
