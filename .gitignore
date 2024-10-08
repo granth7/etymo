@@ -365,3 +365,6 @@ FodyWeavers.xsd
 /GetMorphemeKeyValues.py
 /test.py
 etymo_venv/
+/requirements.txt
+/package.json
+/package-lock.json
