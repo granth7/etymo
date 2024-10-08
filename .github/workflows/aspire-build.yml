@@ -46,7 +46,7 @@ jobs:
           docker login ghcr.io -u ${{ github.repository_owner }} --password ${{ secrets.GITHUB_TOKEN }}
 
       - name: Aspire Init
-        run: aspirate init --non-interactive
+        run: aspirate init --non-interactive --container-registry ghcr.io --container-repository-prefix ${{ github.event.repository.name }}
 
       - name: Aspire Generate
         run: aspirate generate --non-interactive --output-format helm
