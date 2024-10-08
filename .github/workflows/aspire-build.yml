@@ -1,0 +1,58 @@
+on:
+  workflow_dispatch:
+  push:
+    # Run when commits are pushed to mainline branch (main or master)
+    # Set this to the mainline branch you are using
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0
+        with:
+          versionSpec: '5.x'
+
+      - name: Determine Version
+        id: version-git
+        uses: gittools/actions/gitversion/execute@v0
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          source-url: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+          dotnet-version: 8.0.x
+        env: 
+          NUGET_AUTH_TOKEN: ${{secrets.TOKEN_GITHUB}}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test --configuration release --logger trx /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+
+      - name: Docker Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        run:
+          docker login ghcr.io -u ${{ github.repository_owner }} --password ${{ secrets.TOKEN_GITHUB }}
+
+      - name: Install .NET Aspire workload
+        run: dotnet workload install aspire
+
+      - name: Aspire Init
+        run: aspirate init --non-interactive
+
+      - name: Aspire Generate
+        run: aspirate generate --non-interactive --output-format helm

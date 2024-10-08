@@ -9,6 +9,12 @@
     <UserSecretsId>4fd4695d-37a8-4f46-9a93-ec4bf811937c</UserSecretsId>
   </PropertyGroup>
 
+  <PropertyGroup>
+      <ContainerRegistry>ghcr.io</ContainerRegistry>
+      <ContainerRepository>ghcr.io/granth7/etymo</ContainerRepository>
+      <ContainerWorkingDirectory>/bin</ContainerWorkingDirectory>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Etymo.ApiService\Etymo.ApiService.csproj" />
     <ProjectReference Include="..\Etymo.Web\Etymo.Web.csproj" />

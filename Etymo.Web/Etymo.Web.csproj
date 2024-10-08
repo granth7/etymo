@@ -44,4 +44,6 @@
 	<Target Name="Tailwind" BeforeTargets="Compile">
 		<Exec Command="npx tailwindcss -i ./Styles/app.css -o ./wwwroot/app.css" />
 	</Target>
+
+  <Target Name="PublishContainer" />
 </Project>
