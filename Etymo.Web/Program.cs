@@ -15,7 +15,7 @@ builder.Services.AddHttpClient<MorphemeApiClient>(client =>
     {
         // This URL uses "https+http://" to indicate HTTPS is preferred over HTTP.
         // Learn more about service discovery scheme resolution at https://aka.ms/dotnet/sdschemes.
-        client.BaseAddress = new("https+http://apiservice");
+        client.BaseAddress = new("https+http://etymo-apiservice");
     });
 
 var app = builder.Build();
