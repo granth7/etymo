@@ -5,6 +5,8 @@ on:
     # Set this to the mainline branch you are using
     branches:
       - main
+    paths:
+      - "Etymo.AppHost/**"
 
 permissions:
   id-token: write
