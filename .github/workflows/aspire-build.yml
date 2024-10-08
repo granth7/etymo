@@ -23,7 +23,7 @@ jobs:
           source-url: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
           dotnet-version: 8.0.x
         env: 
-          NUGET_AUTH_TOKEN: ${{secrets.TOKEN_GITHUB}}
+          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
       - name: Restore dependencies
         run: dotnet restore
@@ -37,7 +37,7 @@ jobs:
       - name: Docker Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
         run:
-          docker login ghcr.io -u ${{ github.repository_owner }} --password ${{ secrets.TOKEN_GITHUB }}
+          docker login ghcr.io -u ${{ github.repository_owner }} --password ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install .NET Aspire workload
         run: dotnet workload install aspire
