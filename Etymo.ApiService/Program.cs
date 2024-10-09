@@ -9,7 +9,7 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
-var json = File.ReadAllText(@"C:\Users\Grant\source\repos\Etymo\prefixes.json");
+var json = File.ReadAllText(@"prefixes.json");
 var prefixes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
 
 // Configure the HTTP request pipeline.
