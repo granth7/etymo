@@ -46,7 +46,7 @@ jobs:
           docker login ghcr.io -u ${{ github.repository_owner }} --password ${{ secrets.GITHUB_TOKEN }}
 
       - name: Change Directory AppHost
-        run: cd ${{ github.event.repository.name }}.AppHost
+        run: cd /${{ github.event.repository.name }}.AppHost
 
       - name: List Directory AppHost
         run: ls
