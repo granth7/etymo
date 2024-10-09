@@ -48,7 +48,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Aspire Init
-        run: aspirate init --non-interactive --container-registry ghcr.io --container-repository-prefix ${{ github.repository_owner }}/${{ github.repository }} --disable-secrets
+        run: aspirate init --non-interactive --container-registry ghcr.io --container-repository-prefix ${{ github.event.repository.name }} --disable-secrets
         working-directory: ./${{ github.event.repository.name }}.AppHost
 
       - name: Aspire Generate Helm Chart
