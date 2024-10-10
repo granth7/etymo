@@ -73,15 +73,13 @@ jobs:
       - name: Aspire Generate Helm Chart
         run: aspirate generate --non-interactive --output-format helm --disable-secrets --include-dashboard true --image-pull-policy IfNotPresent
 
-      - name: Add files and commit to Github
+      - name: Add, Commit, Push to Github
         run: |
             git config --global user.name '${{ github.actor }}'
             git config --global user.email '${{ github.actor }}@users.noreply.github.com'
             git add ./aspirate-output
             git commit -m "Release v${{ env.GitVersion_SemVer }} images"
-
-      - name: Push to Github
-        run: git push --set-upstream origin build-release-${{ env.GitVersion_SemVer }}
+            git push --set-upstream origin build-release-${{ env.GitVersion_SemVer }}
 
       - name: create pull request
         run: gh pr create -B main -H build-release-${{ env.GitVersion_SemVer }} --title 'Merge build-release-${{ env.GitVersion_SemVer }} into main' --body 'Created by Github action'
