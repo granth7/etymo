@@ -81,5 +81,10 @@ jobs:
             git commit -m "Release v${{ env.GitVersion_SemVer }} images"
 
       - name: Push to Github
-        run: git push
+        run: git push --set-upstream origin build-release-${{ env.GitVersion_SemVer }}
+
+      - name: create pull request
+        run: gh pr create -B main -H build-release-${{ env.GitVersion_SemVer }} --title 'Merge build-release-${{ env.GitVersion_SemVer }} into main' --body 'Created by Github action'
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
