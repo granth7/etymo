@@ -75,6 +75,8 @@ jobs:
 
       - name: Add files and commit to Github
         run: |
+            git config --global user.name '${{ github.actor }}'
+            git config --global user.email '${{ github.actor }}@users.noreply.github.com'
             git add ./aspirate-output
             git commit -m "Release v${{ env.GitVersion_SemVer }} images"
 
