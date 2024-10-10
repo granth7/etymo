@@ -10,9 +10,11 @@ permissions:
   id-token: write
   contents: read
   packages: write
+  pull-requests: write
 
 jobs:
   build:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -36,6 +38,9 @@ jobs:
       - name: Determine Version
         id: version-git
         uses: gittools/actions/gitversion/execute@v0
+
+      - name: Create a new branch
+        run: git checkout -b build-release:${{ env.GitVersion_SemVer }}
 
       - name: Install .NET Aspire workload
         run: dotnet workload install aspire
@@ -67,6 +72,11 @@ jobs:
         working-directory: ./${{ github.event.repository.name }}.AppHost
         run: aspirate generate --non-interactive --output-format helm --disable-secrets --include-dashboard true --image-pull-policy IfNotPresent
 
+      - name: Add files and commit to Github
+        run: |
+            git add aspirate-output
+            git commit -m "Release v${{ env.GitVersion_SemVer }} images"
+
       - name: Push to Github
-        run: git remote set-url --push origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+        run: git push
 
