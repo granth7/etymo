@@ -40,7 +40,7 @@ jobs:
         uses: gittools/actions/gitversion/execute@v0
 
       - name: Create a new branch
-        run: git checkout -b build-release:${{ env.GitVersion_SemVer }}
+        run: git checkout -b build-release-${{ env.GitVersion_SemVer }}
 
       - name: Install .NET Aspire workload
         run: dotnet workload install aspire
