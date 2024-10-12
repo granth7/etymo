@@ -1,0 +1,5 @@
+images:
+  cache: docker.io/library/redis:7.4
+  etymoapiservice: ghcr.io/granth7/etymo/etymo-apiservice:latest
+  etymowebfrontend: ghcr.io/granth7/etymo/etymo-webfrontend:latest
+  aspiredashboard: mcr.microsoft.com/dotnet/aspire-dashboard:8.0
