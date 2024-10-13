@@ -6,7 +6,7 @@ on:
     tags:
       - "chart-*"
     paths:
-      - "./${{ github.event.repository.name }}.AppHost/aspirate-output/**"
+      - "${{ github.event.repository.name }}.AppHost/aspirate-output/**"
 
 jobs:
   publish:
@@ -32,6 +32,6 @@ jobs:
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
         with:
-          charts_dir: ./${{ github.event.repository.name }}.AppHost/aspirate-output
+          charts_dir: ${{ github.event.repository.name }}.AppHost/aspirate-output
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
