@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/main' && github.event.head_commit.message != 'skip ci'
+    if: github.ref == 'refs/heads/main' && github.event.head_commit.message != 'skip ci' && ! contains(github.event.head_commit.message, 'Merge pull request')
     runs-on: ubuntu-latest
     defaults: 
       run: 
