@@ -7,8 +7,6 @@ on:
     # Set this to the mainline branch you are using
     branches:
       - main
-    paths-ignore:
-    - "${{ github.event.repository.name }}.AppHost/aspirate-output/**"
 
 permissions:
   id-token: write
