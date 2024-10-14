@@ -12,6 +12,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "etymo.Web", "etymo.Web\etym
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "etymo.Tests", "etymo.Tests\etymo.Tests.csproj", "{9FDA2F2C-B7AC-44AC-AAEB-1ADDDBC9A78B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{D7A75ACD-0FB8-437F-95C4-C3B86315AFCB}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\aspire-build.yml = .github\workflows\aspire-build.yml
+		.github\workflows\chart-release.yml = .github\workflows\chart-release.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

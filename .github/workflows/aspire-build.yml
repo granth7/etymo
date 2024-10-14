@@ -30,10 +30,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          source-url: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
           dotnet-version: 8.0.x
-        env: 
-          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v3.0.0
@@ -53,8 +50,8 @@ jobs:
       - name: Aspir8 Install
         run: dotnet tool install -g aspirate --prerelease
 
-      - name: Restore dependencies
-        run: dotnet restore
+      # - name: Restore dependencies
+      #   run: dotnet restore
 
       - name: Build
         run: dotnet build --no-restore --configuration Release
