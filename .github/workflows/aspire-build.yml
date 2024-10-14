@@ -27,6 +27,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Clear cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.nuget/packages
+            ~/.nuget/cache
+          key: ${{ runner.os }}-dotnet-${{ hashFiles('**/${{ github.event.repository.name }}.sln') }}-${{ github.run_number }}
+          restore-keys: |
+            ${{ runner.os }}-dotnet-
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
