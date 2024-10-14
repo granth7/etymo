@@ -50,8 +50,11 @@ jobs:
       - name: Aspir8 Install
         run: dotnet tool install -g aspirate --prerelease
 
-      # - name: Restore dependencies
-      #   run: dotnet restore
+      - name: Clean
+        run: dotnet clean
+
+      - name: Restore dependencies
+        run: dotnet restore
 
       - name: Build
         run: dotnet build --no-restore --configuration Release
