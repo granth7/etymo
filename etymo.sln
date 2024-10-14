@@ -2,15 +2,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35027.167
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "etymo.AppHost", "Etymo.AppHost\etymo.AppHost.csproj", "{28290182-70A8-46BA-B2A8-AF4890C51525}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "etymo.AppHost", "etymo.AppHost\etymo.AppHost.csproj", "{28290182-70A8-46BA-B2A8-AF4890C51525}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "etymo.ServiceDefaults", "Etymo.ServiceDefaults\etymo.ServiceDefaults.csproj", "{D243E4E6-9BC8-4636-BB2D-31D30DC90073}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "etymo.ServiceDefaults", "etymo.ServiceDefaults\etymo.ServiceDefaults.csproj", "{D243E4E6-9BC8-4636-BB2D-31D30DC90073}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "etymo.ApiService", "Etymo.ApiService\etymo.ApiService.csproj", "{88AF2B9A-654F-47B4-A684-073B837AE0A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "etymo.ApiService", "etymo.ApiService\etymo.ApiService.csproj", "{88AF2B9A-654F-47B4-A684-073B837AE0A7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "etymo.Web", "Etymo.Web\etymo.Web.csproj", "{580238A2-7D83-45A5-9F75-00B4E894202B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "etymo.Web", "etymo.Web\etymo.Web.csproj", "{580238A2-7D83-45A5-9F75-00B4E894202B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "etymo.Tests", "Etymo.Tests\etymo.Tests.csproj", "{9FDA2F2C-B7AC-44AC-AAEB-1ADDDBC9A78B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "etymo.Tests", "etymo.Tests\etymo.Tests.csproj", "{9FDA2F2C-B7AC-44AC-AAEB-1ADDDBC9A78B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

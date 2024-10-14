@@ -2,10 +2,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "C#: Etymo.Web Debug",
+            "name": "C#: etymo.Web Debug",
             "type": "dotnet",
             "request": "launch",
-            "projectPath": "${workspaceFolder}/Etymo.Web/Etymo.Web.csproj"
+            "projectPath": "${workspaceFolder}/etymo.Web/etymo.Web.csproj"
         },
         {
             "name": "Python Debugger: Current File",
