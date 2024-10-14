@@ -27,16 +27,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Clear cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.nuget/packages
-            ~/.nuget/cache
-          key: ${{ runner.os }}-dotnet-${{ hashFiles('**/${{ github.event.repository.name }}.sln') }}-${{ github.run_number }}
-          restore-keys: |
-            ${{ runner.os }}-dotnet-
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
@@ -62,15 +52,12 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore
-        working-directory: ./${{ github.event.repository.name }}
 
       - name: Build
         run: dotnet build --no-restore --configuration Release
-        working-directory: ./${{ github.event.repository.name }}.AppHost
 
       - name: Test
         run: dotnet test --configuration release --logger trx /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
-        working-directory: ./${{ github.event.repository.name }}.AppHost
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
