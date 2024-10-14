@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults: 
       run: 
-        working-directory: ./${{ github.event.repository.name }}.AppHost
+        working-directory: ./${{ github.event.repository.name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,9 +50,6 @@ jobs:
       - name: Aspir8 Install
         run: dotnet tool install -g aspirate --prerelease
 
-      - name: Clean
-        run: dotnet clean
-
       - name: Restore dependencies
         run: dotnet restore
 
@@ -71,9 +68,11 @@ jobs:
 
       - name: Aspire Init
         run: aspirate init --non-interactive --container-registry ghcr.io --container-repository-prefix ${{ github.repository }} --container-image-tag ${{ env.GitVersion_SemVer }} --disable-secrets 
+        working-directory: ./${{ github.event.repository.name }}.AppHost
 
       - name: Aspire Generate Helm Chart
         run: aspirate generate --non-interactive --output-format helm --disable-secrets --include-dashboard true --image-pull-policy IfNotPresent --container-image-tag ${{ env.GitVersion_SemVer }}
+        working-directory: ./${{ github.event.repository.name }}.AppHost
 
       - name: Add, Commit, Push to Github
         run: |
