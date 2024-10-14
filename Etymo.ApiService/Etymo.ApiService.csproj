@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Etymo.ServiceDefaults\Etymo.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Etymo.ServiceDefaults\etymo.ServiceDefaults.csproj" />
   </ItemGroup>
 
   <Target Name="PublishContainer" />

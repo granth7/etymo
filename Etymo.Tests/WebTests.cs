@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Etymo.Tests;
+namespace etymo.Tests;
 
 public class WebTests
 {

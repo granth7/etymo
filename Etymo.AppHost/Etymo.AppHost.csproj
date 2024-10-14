@@ -10,8 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Etymo.ApiService\Etymo.ApiService.csproj" />
-    <ProjectReference Include="..\Etymo.Web\Etymo.Web.csproj" />
+    <ProjectReference Include="..\Etymo.ApiService\etymo.ApiService.csproj" />
+    <ProjectReference Include="..\Etymo.Web\etymo.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,4 +1,4 @@
-namespace Etymo.Web;
+namespace etymo.Web;
 
 public class MorphemeApiClient(HttpClient httpClient)
 {

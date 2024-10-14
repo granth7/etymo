@@ -1,5 +1,5 @@
-using Etymo.Web;
-using Etymo.Web.Components;
+using etymo.Web;
+using etymo.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 

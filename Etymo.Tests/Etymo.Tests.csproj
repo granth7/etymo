@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Etymo.AppHost\Etymo.AppHost.csproj" />
+    <ProjectReference Include="..\etymo.AppHost\etymo.AppHost.csproj" />
   </ItemGroup>
 
   <ItemGroup>
