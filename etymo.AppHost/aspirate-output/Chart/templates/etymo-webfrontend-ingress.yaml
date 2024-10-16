@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: etymo-webfrontend
+  annotations: {{ .Values.expose.webfrontend.ingress.annotations | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.expose.webfrontend.ingress.ingressClassName }}
+  rules:
+    - host: {{ tpl (index .Values.webfrontend.ingress.hosts 0) . }}
+      http:
+        paths: 
+          - path: {{ .Values.expose.webfrontend.ingress.path }}
+            pathType: {{ .Values.expose.webfrontend.ingress.pathType }}
+            backend:
+              service:
+                name: etymo-webfrontend
+                port:
+                  number: 80
