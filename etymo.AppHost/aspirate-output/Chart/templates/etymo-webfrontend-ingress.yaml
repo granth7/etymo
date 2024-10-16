@@ -2,7 +2,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: etymo-webfrontend
-  annotations: {{ .Values.expose.webfrontend.ingress.annotations }}
+  annotations:
+    {{- toYaml .Values.expose.webfrontend.ingress.annotations | nindent 8 }}
 spec:
   ingressClassName: {{ .Values.expose.webfrontend.ingress.ingressClassName }}
   rules:
