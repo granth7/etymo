@@ -76,7 +76,7 @@ jobs:
         run: |
             chmod +x ../../../.github/workflows/append_values.sh
             ../../../.github/workflows/append_values.sh
-        working-directory: ./aspirate-output/Chart/
+        working-directory: ./${{ github.event.repository.name }}.AppHost/aspirate-output/Chart/
 
       - name: Update Chart.yaml
         run: |
@@ -84,7 +84,7 @@ jobs:
           sed -i 's/Your Aspire Project/etymo/' Chart.yaml
           sed -i "s/appVersion: .*/appVersion: ${{ env.GitVersion_SemVer }}/" Chart.yaml
           sed -i "s/version: .*/version: ${{ env.GitVersion_SemVer }}/" Chart.yaml
-        working-directory: ./aspirate-output/Chart/
+        working-directory: ./${{ github.event.repository.name }}.AppHost/aspirate-output/Chart/
 
       - name: Add, Commit, Push to Github
         run: |
