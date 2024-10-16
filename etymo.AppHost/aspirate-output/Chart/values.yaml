@@ -21,5 +21,4 @@ expose:
       # pathType is only for k8s >= 1.1=
       pathType: Prefix
 
-      hosts:
-        - chart-example.local
+      hosts: ["etymo.your.domain"]
