@@ -2,11 +2,11 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: etymo-webfrontend
-  annotations: {{ .Values.expose.webfrontend.ingress.annotations | nindent 4 }}
+  annotations: {{ .Values.expose.webfrontend.ingress.annotations }}
 spec:
   ingressClassName: {{ .Values.expose.webfrontend.ingress.ingressClassName }}
   rules:
-    - host: {{ tpl (index .Values.webfrontend.ingress.hosts 0) . }}
+    - host: {{ tpl (index .Values.expose.webfrontend.ingress.hosts 0) . }}
       http:
         paths: 
           - path: {{ .Values.expose.webfrontend.ingress.path }}
