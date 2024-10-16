@@ -1,3 +1,4 @@
+{{- if .Values.expose.webfrontend.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -17,3 +18,4 @@ spec:
                 name: etymo-webfrontend
                 port:
                   number: 80
+{{- end }}
