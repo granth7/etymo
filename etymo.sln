@@ -14,6 +14,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "etymo.Tests", "etymo.Tests\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{D7A75ACD-0FB8-437F-95C4-C3B86315AFCB}"
 	ProjectSection(SolutionItems) = preProject
+		.github\workflows\append_values.sh = .github\workflows\append_values.sh
 		.github\workflows\aspire-build.yml = .github\workflows\aspire-build.yml
 		.github\workflows\chart-release.yml = .github\workflows\chart-release.yml
 	EndProjectSection

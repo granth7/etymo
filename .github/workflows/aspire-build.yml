@@ -80,11 +80,17 @@ jobs:
 
       - name: Update Chart.yaml
         run: |
-          sed -i 's/name: Project/name: etymo/' Chart.yaml
-          sed -i 's/Your Aspire Project/etymo/' Chart.yaml
+          sed -i 's/name: AspireProject/name: ${{ github.event.repository.name }}/' Chart.yaml
+          sed -i 's/your Aspire Project/${{ github.event.repository.name }}/' Chart.yaml
           sed -i "s/appVersion: .*/appVersion: ${{ env.GitVersion_SemVer }}/" Chart.yaml
           sed -i "s/version: .*/version: ${{ env.GitVersion_SemVer }}/" Chart.yaml
         working-directory: ./${{ github.event.repository.name }}.AppHost/aspirate-output/Chart/
+
+      - name: Copy Custom Resources from Input
+        run: |
+          cp -r ../../aspirate-input/* ./templates
+        working-directory: ./${{ github.event.repository.name }}.AppHost/aspirate-output/Chart/
+
 
       - name: Add, Commit, Push to Github
         run: |
