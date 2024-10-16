@@ -72,6 +72,20 @@ jobs:
       - name: Aspire Generate Helm Chart
         run: aspirate generate --non-interactive --output-format helm --disable-secrets --include-dashboard true --image-pull-policy IfNotPresent --container-image-tag ${{ env.GitVersion_SemVer }}
 
+      - name: Append Values
+        run: |
+            chmod +x ../../../.github/workflows/append_values.sh
+            ../../../.github/workflows/append_values.sh
+        working-directory: ./aspirate-output/Chart/
+
+      - name: Update Chart.yaml
+        run: |
+          sed -i 's/name: Project/name: etymo/' Chart.yaml
+          sed -i 's/Your Aspire Project/etymo/' Chart.yaml
+          sed -i "s/appVersion: .*/appVersion: ${{ env.GitVersion_SemVer }}/" Chart.yaml
+          sed -i "s/version: .*/version: ${{ env.GitVersion_SemVer }}/" Chart.yaml
+        working-directory: ./aspirate-output/Chart/
+
       - name: Add, Commit, Push to Github
         run: |
             git config --global user.name '${{ github.actor }}'
