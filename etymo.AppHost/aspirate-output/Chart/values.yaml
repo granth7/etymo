@@ -1,17 +1,5 @@
 images:
   cache: docker.io/library/redis:7.4
-  etymoapiservice: ghcr.io/granth7/etymo/etymo-apiservice:0.0.1-133
-  etymowebfrontend: ghcr.io/granth7/etymo/etymo-webfrontend:0.0.1-133
+  etymoapiservice: ghcr.io/granth7/etymo/etymo-apiservice:0.0.1-139
+  etymowebfrontend: ghcr.io/granth7/etymo/etymo-webfrontend:0.0.1-139
   aspiredashboard: mcr.microsoft.com/dotnet/aspire-dashboard:8.0
-expose:
-  webfrontend:
-    ingress:
-      enabled: false
-      ingressClassName: internal
-      annotations: {}
-      labels: {}
-
-      path: /
-      pathType: Prefix
-
-      hosts: ["etymo.your.domain"]
