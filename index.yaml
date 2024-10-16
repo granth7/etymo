@@ -21,6 +21,15 @@ entries:
     version: 0.0.1-83
   etymo:
   - apiVersion: v2
+    appVersion: 0.0.1-139
+    created: "2024-10-16T03:08:11.323689113Z"
+    description: A Helm chart to Deploy etymo to Kubernetes.
+    digest: 6a668ab69cccd2b44441f83d0254517f6f32b2ff5c42b970ca88a66cd0ac21f5
+    name: etymo
+    urls:
+    - https://github.com/granth7/etymo/releases/download/etymo-0.0.1-139/etymo-0.0.1-139.tgz
+    version: 0.0.1-139
+  - apiVersion: v2
     appVersion: 0.0.1-133
     created: "2024-10-16T02:58:46.704046715Z"
     description: A Helm chart to Deploy etymo to Kubernetes.
@@ -101,4 +110,4 @@ entries:
     urls:
     - https://github.com/granth7/etymo/releases/download/etymo-0.0.1-118/etymo-0.0.1-118.tgz
     version: 0.0.1-118
-generated: "2024-10-16T02:58:46.704106977Z"
+generated: "2024-10-16T03:08:11.323751709Z"
