@@ -66,6 +66,15 @@ entries:
     - https://github.com/granth7/etymo/releases/download/etymo-0.0.1-119/etymo-0.0.1-119.tgz
     version: 0.0.1-119
   - apiVersion: v2
+    appVersion: 0.0.1-119
+    created: "2024-10-16T01:52:34.84391826Z"
+    description: A Helm chart to Deploy etymo to Kubernetes.
+    digest: 96284e8aad76664fe7f4f8890531ed7cdaccb4ae6dcfaf087ed83b8b3700c41b
+    name: etymo
+    urls:
+    - https://github.com/granth7/etymo/releases/download/etymo-0.0.1-119/etymo-0.0.1-119.tgz
+    version: 0.0.1-119
+  - apiVersion: v2
     appVersion: 0.0.1-118
     created: "2024-10-14T23:20:59.256456901Z"
     description: A Helm chart to Deploy your Aspire Project to Kubernetes.
@@ -74,4 +83,4 @@ entries:
     urls:
     - https://github.com/granth7/etymo/releases/download/etymo-0.0.1-118/etymo-0.0.1-118.tgz
     version: 0.0.1-118
-generated: "2024-10-16T01:43:04.652029455Z"
+generated: "2024-10-16T01:52:34.843948196Z"
