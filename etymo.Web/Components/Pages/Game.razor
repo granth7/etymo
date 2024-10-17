@@ -56,11 +56,11 @@ else
             <dialog id="my_modal_1" class="modal modal-bottom sm:modal-middle @openGameOverModal">
                 <div class="modal-box">
                     <h3 class="text-lg font-bold">Game Over!</h3>
-                    <p class="py-4">Good try! Press 'retry' to try new words, or press 'close' to see your results.</p>
+                    <p class="py-4">Good try! Press 'New Game' to try new words, or press 'close' to see your results.</p>
                     <div class="modal-action">
                         <form method="dialog">
                             <!-- if there is a button in form, it will close the modal -->
-                            <button class="btn" @onclick="@(e => NavigateToUri("/"))">Retry</button>
+                            <button class="btn" @onclick="@(e => NavigateToUri("/"))">New Game</button>
                             <button class="btn" @onclick="CloseModal">Close</button>
                         </form>
                     </div>
@@ -78,11 +78,11 @@ else
             <dialog id="my_modal_1" class="modal modal-bottom sm:modal-middle @openGameWonModal">
                 <div class="modal-box">
                     <h3 class="text-lg font-bold">Congratulations!</h3>
-                    <p class="py-4">You did it! Press 'retry' to try new words, or press 'close' to see your results.</p>
+                    <p class="py-4">You did it! Press 'New Game' to try new words, or press 'close' to see your results.</p>
                     <div class="modal-action">
                         <form method="dialog">
                             <!-- if there is a button in form, it will close the modal -->
-                            <button class="btn" @onclick="@(e => NavigateToUri("/"))">Retry</button>
+                            <button class="btn" @onclick="@(e => NavigateToUri("/"))">New Game</button>
                             <button class="btn" @onclick="CloseModal">Close</button>
                         </form>
                     </div>
@@ -156,7 +156,7 @@ else
                     <div id="slide@(indexOfCurrentMorpheme)" class="carousel-item card relative w-full"
                          style="display:@(morphemesAnswerKey[indexOfCurrentMorpheme].GuessedCorrectly ? "none" : "inline" )">
                         <div class="card bg-@PickCardColor(indexOfCurrentMorpheme) place-content-center text-@PickCardColor(indexOfCurrentMorpheme)-content shadow-md">
-                            <div class="card-body grid" style="justify-items: center">
+                            <div class="card-body grid" style="display: flex; align-items: center;">
                                 <h2 class="card-title col-start-2 col-span-3 absolute -translate-y-1/2">@morphemesAnswerKey[indexOfCurrentMorpheme].Kvp.Key-</h2>
                             </div>
                         </div>
