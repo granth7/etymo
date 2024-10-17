@@ -209,7 +209,7 @@ else
                 <div class="col-span-3">
                     @for (int i = 1; i <= 3; i++)
                     {
-                        <input type="radio" name="radio-@i" class="radio" checked="@(i <= mistakesRemaining ? true : false)" title="mistake-@i" />
+                        <input type="radio" name="radio-@i" class="radio" checked="@(i <= mistakesRemaining ? true : false)" inert/>
                     }
                 </div>
             </div>
@@ -405,7 +405,7 @@ else
                 // incorrect guess
                 mistakesRemaining--;
 
-                if (mistakesRemaining < 0)
+                if (mistakesRemaining == 0)
                 {
                     // game over
                     showGameOverModal = true;
@@ -440,7 +440,7 @@ else
                 showGameWonModal = true;
             }
 
-            if (cardCount == 0 || mistakesRemaining < 0)
+            if (cardCount == 0 || mistakesRemaining == 0)
             {
                 // show results
                 showResults = true;
