@@ -6,6 +6,8 @@
 @inject MorphemeApiClient MorphemeApi
 @inject NavigationManager _navigationManager
 
+@using etymo.Web.Components.Extensions
+
 @if (morphemesAnswerKey == null)
 {
     <p><em>Loading...</em></p>
@@ -144,7 +146,7 @@ else
 
             <h2 class="grid-item text-2xl font-bold col-start-2 col-span-5 ">Match the prefixes!</h2>
 
-            <h1 class="grid-item text-1xl font-bold col-start-2 col-span-5">@numberGuessedCorrectly out of @morphemesAnswerKey.Length guessed</h1>
+            <h2 class="grid-item text-1xl font-bold col-start-2 col-span-5">@numberGuessedCorrectly out of @morphemesAnswerKey.Length guessed</h2>
 
             <div class="carousel rounded-box col-start-2 col-span-5 md:col-span-3 md:col-start-3">
                 @foreach (var morpheme in morphemesAnswerKey)
@@ -202,7 +204,7 @@ else
             </div>
 
             <div class="join col-start-2 col-span-5 place-content-center">
-                <div class="text-base font-bold">Mistakes remaining: &nbsp;&nbsp;</div>
+                <div class="text-base font-bold">Mistakes left: &nbsp;&nbsp;</div>
 
                 <div class="col-span-3">
                     @for (int i = 1; i <= 3; i++)
@@ -293,6 +295,8 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        _navigationManager.RemoveFragment();
+
         morphemesAnswerKey = await MorphemeApi.GetMorphemesAsync();
 
         mistakesRemaining = mistakesAvailable;
