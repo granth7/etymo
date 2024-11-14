@@ -220,7 +220,7 @@ else
                 </div>
 
                 <div>
-                    @if (selectedDefinition != null && justMadeAMistake == false)
+                    @if (selectedDefinition != null && justMadeAMistake == false && showAlreadyGuessedAlert == false && showIncorrectGuessAlert == false && showCorrectGuessAlert == false)
                     {
                         <button class="btn btn-enabled w-32 rounded-full aspect" @onclick="() => Submit()">SUBMIT</button>
                     }
@@ -230,6 +230,8 @@ else
                     }
                 </div>
             </div>
+
+            <br />
         }
 
         @if (showResults)
@@ -295,6 +297,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // Remove fragment from url paramaters to avoid jumping to previous href on refresh. 
         _navigationManager.RemoveFragment();
 
         morphemesAnswerKey = await MorphemeApi.GetMorphemesAsync();
@@ -405,14 +408,6 @@ else
                 // incorrect guess
                 mistakesRemaining--;
 
-                if (mistakesRemaining == 0)
-                {
-                    // game over
-                    showGameOverModal = true;
-
-                    return;
-                }
-
                 justMadeAMistake = true;
                 previousGuess = selectedDefinition;
 
@@ -432,6 +427,14 @@ else
                 }
 
                 showIncorrectGuessAlert = false;
+            }
+
+            if (mistakesRemaining == 0)
+            {
+                // game over
+                showGameOverModal = true;
+
+                return;
             }
 
             if (cardCount == 0)
