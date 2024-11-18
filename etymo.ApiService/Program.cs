@@ -9,16 +9,33 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
-var json = File.ReadAllText(@"prefixes.json");
-var prefixes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+var latinPrefixJson = File.ReadAllText(@"latinPrefixes.json");
+var latinPrefixes = JsonConvert.DeserializeObject<Dictionary<string, string>>(latinPrefixJson);
+
+var latinSuffixJson = File.ReadAllText(@"latinSuffixes.json");
+var latinSuffixes = JsonConvert.DeserializeObject<Dictionary<string, string>>(latinSuffixJson);
+
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 
-app.MapGet("/morphemelist", () =>
+app.MapGet("/morphemelist", (string gameType) =>
 {
+    var morphemeList = new Dictionary<string, string>();
+    if (gameType == "latinPrefixes")
+    {
+        morphemeList = latinPrefixes;
+    }
+    else if (gameType == "latinSuffixes")
+    {
+        morphemeList = latinSuffixes;
+    }
+    else
+    {
+        morphemeList = null;
+    }
 
-    if (prefixes != null && prefixes.Count > 0)
+    if (morphemeList != null && morphemeList.Count > 0)
     {
         int morphemeListSize = 5;
         var random = new Random();
@@ -32,15 +49,15 @@ app.MapGet("/morphemelist", () =>
         {
             do
             {
-                number = random.Next(prefixes.Count);
+                number = random.Next(morphemeList.Count);
             } while (indexList.Contains(number));
             indexList.Add(number);
         }
 
         foreach (int index in indexList)
         {
-            string key = prefixes.Keys.ElementAt(index);
-            string value = prefixes.Values.ElementAt(index);
+            string key = morphemeList.Keys.ElementAt(index);
+            string value = morphemeList.Values.ElementAt(index);
 
             var kvp = new KeyValuePair<string, string>(key, value);
             var morpheme = new Morepheme(kvp);
