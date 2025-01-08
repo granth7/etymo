@@ -14,3 +14,7 @@ expose:
       path: /
       pathType: Prefix
       hosts: ["etymo.your.domain"]
+
+secrets:
+  connectionStrings:
+    existingPostgres: ""

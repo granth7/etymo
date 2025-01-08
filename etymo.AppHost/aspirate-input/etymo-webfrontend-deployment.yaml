@@ -3,28 +3,28 @@ kind: Deployment
 metadata:
   annotations: {}
   labels:
-    app: etymo-apiservice
-  name: etymo-apiservice
+    app: etymo-webfrontend
+  name: etymo-webfrontend
 spec:
   minReadySeconds: 60
   replicas: 1
   selector:
     matchLabels:
-      app: etymo-apiservice
+      app: etymo-webfrontend
   strategy:
     type: Recreate
   template:
     metadata:
       annotations: {}
       labels:
-        app: etymo-apiservice
+        app: etymo-webfrontend
     spec:
       containers:
       - args: []
         envFrom:
         - configMapRef:
-            name: etymo-apiservice
-        image: '{{ .Values.images.etymoapiservice }}'
+            name: etymo-webfrontend
+        image: '{{ .Values.images.etymowebfrontend }}'
         env:
           - name: existingPostgres
             valueFrom:
@@ -32,7 +32,7 @@ spec:
                 name: {{ .Values.secrets.connectionStrings.existingPostgres | split "/".0 }}
                 key: {{ .Values.secrets.connectionStrings.existingPostgres | split "/".1 }}
         imagePullPolicy: IfNotPresent
-        name: etymo-apiservice
+        name: etymo-webfrontend
         ports:
         - containerPort: 8080
           name: http
