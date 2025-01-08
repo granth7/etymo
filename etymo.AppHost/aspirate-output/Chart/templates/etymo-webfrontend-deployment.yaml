@@ -29,8 +29,8 @@ spec:
           - name: existingPostgres
             valueFrom:
               secretKeyRef:
-               name: {{ (split "/" .Values.secrets.connectionStrings.existingPostgres).0 }} 
-               key: {{ (split "/" .Values.secrets.connectionStrings.existingPostgres).1 }}
+               name: {{ (split "/" .Values.secrets.connectionStrings.existingPostgres)._0 }} 
+               key: {{ (split "/" .Values.secrets.connectionStrings.existingPostgres)._1 }}
         imagePullPolicy: IfNotPresent
         name: etymo-webfrontend
         ports:
