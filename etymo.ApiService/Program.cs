@@ -98,8 +98,6 @@ app.MapGet("/morphemelist", (string gameType) =>
 
 app.MapDefaultEndpoints();
 
-// Use the service provider to create a scope and resolve MyService using (var scope = app.Services.CreateScope()) { var myService = scope.ServiceProvider.GetRequiredService<MyService>(); // Call a method from MyService var entities = await myService.GetEntitiesAsync(); // Do something with the retrieved entities, e.g., log them foreach (var entity in entities) { Console.WriteLine($"Id: {entity.Id}, Name: {entity.Name}, CreatedDate: {entity.CreatedDate}"); }
-
 app.Run();
 
 record Morepheme(KeyValuePair<string, string> Kvp)
