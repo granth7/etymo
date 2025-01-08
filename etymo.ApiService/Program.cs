@@ -1,3 +1,4 @@
+using etymo.ApiService;
 using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,10 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddProblemDetails();
 
+builder.AddNpgsqlDataSource(connectionName: "existingPostgres");
+
+builder.Services.AddScoped<PostgresService>();
+
 var app = builder.Build();
 var latinPrefixJson = File.ReadAllText(@"latinPrefixes.json");
 var latinPrefixes = JsonConvert.DeserializeObject<Dictionary<string, string>>(latinPrefixJson);
@@ -15,9 +20,23 @@ var latinPrefixes = JsonConvert.DeserializeObject<Dictionary<string, string>>(la
 var latinSuffixJson = File.ReadAllText(@"latinSuffixes.json");
 var latinSuffixes = JsonConvert.DeserializeObject<Dictionary<string, string>>(latinSuffixJson);
 
-
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
+
+// Use the service provider to create a scope and resolve PostgresService 
+using (var scope = app.Services.CreateScope())
+{
+    var postgresService = scope.ServiceProvider.GetRequiredService<PostgresService>();
+
+    // Call a method from PostgresService 
+    var entities = await postgresService.GetEntitiesAsync();
+
+    // Do something with the retrieved entities, e.g., log them 
+    foreach (var entity in entities)
+    {
+        Console.WriteLine($"Id: {entity.Id}, Name: {entity.Name}, CreatedDate: {entity.CreatedDate}");
+    }
+}
 
 app.MapGet("/morphemelist", (string gameType) =>
 {
