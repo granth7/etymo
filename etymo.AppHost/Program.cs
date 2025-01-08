@@ -19,14 +19,14 @@ else if (connectionString == null)
 
 var cache = builder.AddRedis("cache");
 
-var apiService = builder.AddProject<Projects.etymo_ApiService>("etymo-apiservice");
-
 var existingPostgres = builder.AddConnectionString("existingPostgres");
+
+var apiService = builder.AddProject<Projects.etymo_ApiService>("etymo-apiservice")
+                 .WithReference(existingPostgres);
 
 builder.AddProject<Projects.etymo_Web>("etymo-webfrontend")
 .WithExternalHttpEndpoints()
 .WithReference(cache)
-.WithReference(apiService)
-.WithReference(existingPostgres);
+.WithReference(apiService);
 
 builder.Build().Run();
