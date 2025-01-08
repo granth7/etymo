@@ -25,6 +25,12 @@ spec:
         - configMapRef:
             name: etymo-webfrontend
         image: '{{ .Values.images.etymowebfrontend }}'
+        env:
+          - name: existingPostgres
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secrets.connectionStrings.existingPostgres | split "/".0 }}
+                key: {{ .Values.secrets.connectionStrings.existingPostgres | split "/".1 }}
         imagePullPolicy: IfNotPresent
         name: etymo-webfrontend
         ports:
