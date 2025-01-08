@@ -14,7 +14,7 @@ expose:
       hosts: [\"etymo.your.domain\"]
 secrets:
   connectionStrings:
-    existingPostgres: \"\"
+    existingPostgres: \"secret-name/secret-key\"
 "
 
 # Append the values to the existing values.yaml file
