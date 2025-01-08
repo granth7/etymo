@@ -1,14 +1,15 @@
 var builder = DistributedApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
-var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__existingPostgres"); 
+var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__existingPostgres");
 
 // If the environment variable exists, then the app has been deployed to a cluster. So, connect to the database running in the cluster.
 if (connectionString != null)
 {
     configuration["ConnectionStrings:existingPostgres"] = connectionString;
 }
-// If the environment variable doesn't exist, then the app is running locally. Enter the credentials (do not commit) or create a local environment variable. 
+// If the environment variable doesn't exist, then the app is running locally or the cluster secret does not exist.
+// Enter the credentials (do not commit) or create a local environment variable. 
 // Example: setx ConnectionStrings__existingPostgres "Host=myserver;Database=mydb;Username=myuser;Password=mypassword"
 // Reopen Visual Studio to pick up the changes.
 else if (connectionString == null)

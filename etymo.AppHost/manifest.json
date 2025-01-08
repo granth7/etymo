@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json.schemastore.org/aspire-8.0.json",
+  "resources": {
+    "cache": {
+      "type": "container.v0",
+      "connectionString": "{cache.bindings.tcp.host}:{cache.bindings.tcp.port}",
+      "image": "docker.io/library/redis:7.4",
+      "bindings": {
+        "tcp": {
+          "scheme": "tcp",
+          "protocol": "tcp",
+          "transport": "tcp",
+          "targetPort": 6379
+        }
+      }
+    },
+    "etymo-apiservice": {
+      "type": "project.v0",
+      "path": "../etymo.ApiService/etymo.ApiService.csproj",
+      "env": {
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
+        "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "HTTP_PORTS": "{etymo-apiservice.bindings.http.targetPort}"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http"
+        },
+        "https": {
+          "scheme": "https",
+          "protocol": "tcp",
+          "transport": "http"
+        }
+      }
+    },
+    "etymo-webfrontend": {
+      "type": "project.v0",
+      "path": "../etymo.Web/etymo.Web.csproj",
+      "env": {
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
+        "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
+        "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
+        "HTTP_PORTS": "{etymo-webfrontend.bindings.http.targetPort}",
+        "ConnectionStrings__cache": "{cache.connectionString}",
+        "services__etymo-apiservice__http__0": "{etymo-apiservice.bindings.http.url}",
+        "services__etymo-apiservice__https__0": "{etymo-apiservice.bindings.https.url}",
+        "ConnectionStrings__existingPostgres": "{existingPostgres.connectionString}"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "external": true
+        },
+        "https": {
+          "scheme": "https",
+          "protocol": "tcp",
+          "transport": "http",
+          "external": true
+        }
+      }
+    }
+  }
+}
