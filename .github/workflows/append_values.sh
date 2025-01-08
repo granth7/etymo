@@ -12,6 +12,9 @@ expose:
       path: /
       pathType: Prefix
       hosts: [\"etymo.your.domain\"]
+secrets:
+  connectionStrings:
+    existingPostgres: ""
 "
 
 # Append the values to the existing values.yaml file
