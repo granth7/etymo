@@ -17,4 +17,4 @@ expose:
 
 secrets:
   connectionStrings:
-    existingPostgres: ""
+    existingPostgres: "placeholder"
