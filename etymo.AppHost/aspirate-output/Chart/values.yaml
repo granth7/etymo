@@ -1,7 +1,7 @@
 images:
   cache: docker.io/library/redis:7.4
-  etymoapiservice: ghcr.io/granth7/etymo/etymo-apiservice:0.0.1-170
-  etymowebfrontend: ghcr.io/granth7/etymo/etymo-webfrontend:0.0.1-170
+  etymoapiservice: ghcr.io/granth7/etymo/etymo-apiservice:0.0.1-183
+  etymowebfrontend: ghcr.io/granth7/etymo/etymo-webfrontend:0.0.1-183
   aspiredashboard: mcr.microsoft.com/dotnet/aspire-dashboard:8.0
 
 expose:
@@ -14,7 +14,7 @@ expose:
       path: /
       pathType: Prefix
       hosts: ["etymo.your.domain"]
-
 secrets:
   connectionStrings:
-    existingPostgres: ""
+    existingPostgres: 
+
