@@ -21,6 +21,15 @@ entries:
     version: 0.0.1-83
   etymo:
   - apiVersion: v2
+    appVersion: 0.0.1-223
+    created: "2025-01-09T23:23:02.82894065Z"
+    description: A Helm chart to Deploy etymo to Kubernetes.
+    digest: acd458eae9a2d3e6915fd330909625c01d62963395122805aa6307bf4abe0b55
+    name: etymo
+    urls:
+    - https://github.com/granth7/etymo/releases/download/etymo-0.0.1-223/etymo-0.0.1-223.tgz
+    version: 0.0.1-223
+  - apiVersion: v2
     appVersion: 0.0.1-219
     created: "2025-01-09T22:37:15.556331946Z"
     description: A Helm chart to Deploy etymo to Kubernetes.
@@ -229,15 +238,6 @@ entries:
     version: 0.0.1-119
   - apiVersion: v2
     appVersion: 0.0.1-119
-    created: "2024-10-16T01:11:55.887267963Z"
-    description: A Helm chart to Deploy etymo to Kubernetes.
-    digest: c9e8508979f7c5f31785d93ca48bd2e8e04e27974e3a81b9b7a3b336e098040a
-    name: etymo
-    urls:
-    - https://github.com/granth7/etymo/releases/download/etymo-0.0.1-119/etymo-0.0.1-119.tgz
-    version: 0.0.1-119
-  - apiVersion: v2
-    appVersion: 0.0.1-119
     created: "2024-10-16T01:43:04.651997515Z"
     description: A Helm chart to Deploy etymo to Kubernetes.
     digest: 5656133354b76a0c5b05340b806424b619974db1d4310064c9ca74792473374b
@@ -273,6 +273,15 @@ entries:
     - https://github.com/granth7/etymo/releases/download/etymo-0.0.1-119/etymo-0.0.1-119.tgz
     version: 0.0.1-119
   - apiVersion: v2
+    appVersion: 0.0.1-119
+    created: "2024-10-16T01:11:55.887267963Z"
+    description: A Helm chart to Deploy etymo to Kubernetes.
+    digest: c9e8508979f7c5f31785d93ca48bd2e8e04e27974e3a81b9b7a3b336e098040a
+    name: etymo
+    urls:
+    - https://github.com/granth7/etymo/releases/download/etymo-0.0.1-119/etymo-0.0.1-119.tgz
+    version: 0.0.1-119
+  - apiVersion: v2
     appVersion: 0.0.1-118
     created: "2024-10-14T23:20:59.256456901Z"
     description: A Helm chart to Deploy your Aspire Project to Kubernetes.
@@ -281,4 +290,4 @@ entries:
     urls:
     - https://github.com/granth7/etymo/releases/download/etymo-0.0.1-118/etymo-0.0.1-118.tgz
     version: 0.0.1-118
-generated: "2025-01-09T22:37:15.556605756Z"
+generated: "2025-01-09T23:23:02.829397255Z"
