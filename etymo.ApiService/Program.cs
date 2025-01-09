@@ -10,7 +10,12 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 
 builder.AddNpgsqlDataSource(connectionName: "existingPostgres");
-Console.WriteLine($"Retrieved connection string: {builder.Configuration.GetConnectionString("existingPostgres")}"); // Logging the connection string
+
+// Retrieve the connection string from the configuration
+var connectionString = builder.Configuration.GetConnectionString("existingPostgres"); 
+
+// Log the connection string securely (for debugging purposes only)
+Console.WriteLine($"[DEBUG] Retrieved connection string: {connectionString}");
 
 builder.Services.AddScoped<PostgresService>();
 
