@@ -29,8 +29,8 @@ spec:
           - name: existingPostgres
             valueFrom:
               secretKeyRef:
-               name: {{ .Values.secrets.connectionStrings.existingPostgres.name | quote }} 
-               key: {{ .Values.secrets.connectionStrings.existingPostgres.key | quote }}
+                name: {{ .Values.secrets.connectionStrings.existingPostgres.name | quote }} 
+                key: {{ .Values.secrets.connectionStrings.existingPostgres.key | quote }}
         imagePullPolicy: IfNotPresent
         name: etymo-apiservice
         ports:
