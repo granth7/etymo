@@ -15,7 +15,7 @@ expose:
 secrets:
   connectionStrings:
     existingPostgres:
-      name:\"secret-name\"
+      name: \"secret-name\"
       key: \"secret-key\"
 "
 
