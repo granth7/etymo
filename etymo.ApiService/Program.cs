@@ -3,6 +3,24 @@ using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var configuration = builder.Configuration;
+
+var connectionString = Environment.GetEnvironmentVariable("existingPostgres");
+
+// If this environment variable exists, then the app has retrieved it from the cluster deployment.
+// So, connect to the database running in the cluster.
+if (connectionString != null)
+{
+    configuration["ConnectionStrings:existingPostgres"] = connectionString;
+}
+// If the environment variable doesn't exist, then the app is running locally or the cluster secret does not exist.
+else if (connectionString == null)
+{
+    connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__existingPostgres");
+    configuration["ConnectionStrings:existingPostgres"] = connectionString;
+}
+
+
 // Add service defaults & Aspire components.
 builder.AddServiceDefaults();
 
@@ -10,9 +28,6 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 
 builder.AddNpgsqlDataSource(connectionName: "existingPostgres");
-
-// Retrieve the connection string from the configuration
-var connectionString = builder.Configuration.GetConnectionString("existingPostgres"); 
 
 // Log the connection string securely (for debugging purposes only)
 Console.WriteLine($"[DEBUG] Retrieved connection string: {connectionString}");

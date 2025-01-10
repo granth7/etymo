@@ -23,7 +23,6 @@
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
         "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
         "HTTP_PORTS": "{etymo-apiservice.bindings.http.targetPort}",
-        "ConnectionStrings__existingPostgres": "{existingPostgres.connectionString}"
       },
       "bindings": {
         "http": {
