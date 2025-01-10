@@ -1,7 +1,7 @@
 images:
   cache: docker.io/library/redis:7.4
-  etymoapiservice: ghcr.io/granth7/etymo/etymo-apiservice:0.0.1-230
-  etymowebfrontend: ghcr.io/granth7/etymo/etymo-webfrontend:0.0.1-230
+  etymoapiservice: ghcr.io/granth7/etymo/etymo-apiservice:0.0.1-234
+  etymowebfrontend: ghcr.io/granth7/etymo/etymo-webfrontend:0.0.1-234
   aspiredashboard: mcr.microsoft.com/dotnet/aspire-dashboard:8.0
 
 expose:
@@ -17,6 +17,6 @@ expose:
 secrets:
   connectionStrings:
     existingPostgres:
-      name:"secret-name"
+      name: "secret-name"
       key: "secret-key"
 
