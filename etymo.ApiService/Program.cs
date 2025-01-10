@@ -20,7 +20,6 @@ else if (connectionString == null)
     configuration["ConnectionStrings:existingPostgres"] = connectionString;
 }
 
-
 // Add service defaults & Aspire components.
 builder.AddServiceDefaults();
 
@@ -28,9 +27,6 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 
 builder.AddNpgsqlDataSource(connectionName: "existingPostgres");
-
-// Log the connection string securely (for debugging purposes only)
-Console.WriteLine($"[DEBUG] Retrieved connection string: {connectionString}");
 
 builder.Services.AddScoped<PostgresService>();
 
