@@ -19,14 +19,22 @@ else if (connectionString == null)
 
 var cache = builder.AddRedis("cache");
 
+var keycloak = builder.AddKeycloak("keycloak", 8080)
+                      .WithDataVolume()
+                      .WithRealmImport("../realms");
+
 var existingPostgres = builder.AddConnectionString("existingPostgres");
 
 var apiService = builder.AddProject<Projects.etymo_ApiService>("etymo-apiservice")
-                 .WithReference(existingPostgres);
+                        .WithReference(existingPostgres)
+                        .WithReference(keycloak)
+                        .WaitFor(keycloak);
 
 builder.AddProject<Projects.etymo_Web>("etymo-webfrontend")
-.WithExternalHttpEndpoints()
-.WithReference(cache)
-.WithReference(apiService);
+    .WithExternalHttpEndpoints()
+    .WithReference(cache)
+    .WithReference(keycloak)
+    .WithReference(apiService)
+    .WaitFor(apiService);
 
 builder.Build().Run();

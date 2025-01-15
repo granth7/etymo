@@ -1,0 +1,32 @@
+﻿@page "/Home"
+
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [StreamRendering(true)]
+@attribute [OutputCache(Duration = 5)]
+@rendermode InteractiveServer
+@inject NavigationManager _navigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@using etymo.Web.Components.Extensions
+
+
+<PageTitle>Etymo</PageTitle>
+
+<h1>Word Lists</h1>
+
+<p>This component demonstrates showing data loaded from a backend API service.</p>
+
+<AuthorizeView>
+    <Authorized>
+        {
+        <p>You are logged in!</p>
+        }
+
+        @code
+        {
+        }
+    </Authorized>
+    <NotAuthorized>
+        <p><strong>Please <a href="authentication/login">log in</a> to view public word lists.</strong></p>
+    </NotAuthorized>
+</AuthorizeView>

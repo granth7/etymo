@@ -1,4 +1,6 @@
 using etymo.ApiService;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,6 +32,16 @@ builder.AddNpgsqlDataSource(connectionName: "existingPostgres");
 
 builder.Services.AddScoped<PostgresService>();
 
+
+builder.Services.AddAuthentication()
+                .AddKeycloakJwtBearer("keycloak", realm: "WeatherShop", options =>
+                {
+                    options.RequireHttpsMetadata = false;
+                    options.Audience = "weather.api";
+                });
+
+builder.Services.AddAuthorizationBuilder();
+
 var app = builder.Build();
 var latinPrefixJson = File.ReadAllText(@"latinPrefixes.json");
 var latinPrefixes = JsonConvert.DeserializeObject<Dictionary<string, string>>(latinPrefixJson);
@@ -40,20 +52,6 @@ var latinSuffixes = JsonConvert.DeserializeObject<Dictionary<string, string>>(la
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 
-// Use the service provider to create a scope and resolve PostgresService 
-using (var scope = app.Services.CreateScope())
-{
-    var postgresService = scope.ServiceProvider.GetRequiredService<PostgresService>();
-
-    // Call a method from PostgresService 
-    var entities = await postgresService.GetEntitiesAsync();
-
-    // Do something with the retrieved entities, e.g., log them 
-    foreach (var entity in entities)
-    {
-        Console.WriteLine($"Id: {entity.Id}, Name: {entity.Name}, CreatedDate: {entity.CreatedDate}");
-    }
-}
 
 app.MapGet("/morphemelist", (string gameType) =>
 {
@@ -112,6 +110,20 @@ app.MapGet("/morphemelist", (string gameType) =>
 
     return null;
 });
+
+//app.MapGet("/privatewordlist", () =>
+//{
+//    // Use the service provider to create a scope and resolve PostgresService 
+//    using (var scope = app.Services.CreateScope())
+//    {
+//        var postgresService = scope.ServiceProvider.GetRequiredService<PostgresService>();
+
+//        // Call a method from PostgresService 
+//        var wordListOverviews = await postgresService.GetPrivateWordListOverviewsAsync();
+
+//        return wordListOverviews;
+//    }
+//}).RequireAuthorization();
 
 app.MapDefaultEndpoints();
 

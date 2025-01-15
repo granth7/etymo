@@ -1,19 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-	<PackageReference Include="Aspire.Npgsql" Version="9.0.0" />
+    <PackageReference Include="Aspire.Npgsql" Version="9.0.0" />
+    <PackageReference Include="Aspire.Keycloak.Authentication" Version="9.0.0-preview.5.24551.3" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\etymo.ServiceDefaults\etymo.ServiceDefaults.csproj" />
   </ItemGroup>
-
   <Target Name="PublishContainer" />
 </Project>
