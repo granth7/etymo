@@ -1,49 +1,39 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
     <NpmLastInstall>node_modules/.last-install</NpmLastInstall>
   </PropertyGroup>
-
   <ItemGroup>
     <Content Include="tailwind.config.js" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\etymo.ServiceDefaults\etymo.ServiceDefaults.csproj" />
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="Aspire.StackExchange.Redis.OutputCaching" Version="8.0.0" />
+    <PackageReference Include="Aspire.StackExchange.Redis.OutputCaching" Version="9.0.0" />
+    <PackageReference Include="Aspire.Keycloak.Authentication" Version="9.0.0-preview.5.24551.3" />
   </ItemGroup>
-
   <ItemGroup>
-	<Watch Include="./Styles/tailwind.css" Exclude="./wwwroot/**/*;obj\**\*;bin\**\*" />
+    <Watch Include="./Styles/tailwind.css" Exclude="./wwwroot/**/*;obj\**\*;bin\**\*" />
   </ItemGroup>
-
- <Target Name="CheckForNpm" BeforeTargets="NpmInstall">
+  <Target Name="CheckForNpm" BeforeTargets="NpmInstall">
     <Exec Command="npm -v" ContinueOnError="true">
       <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
     </Exec>
     <Error Condition="'$(ErrorCode)' != '0'" Text="You must install NPM to build this project" />
   </Target>
-
   <Target Name="NpmInstall" BeforeTargets="BuildCSS" Inputs="package.json" Outputs="$(NpmLastInstall)">
     <Exec Command="npm install" />
     <Touch Files="$(NpmLastInstall)" AlwaysCreate="true" />
   </Target>
-
   <Target Name="BuildCSS" BeforeTargets="Compile">
     <Exec Command="npm run build" Condition=" '$(Configuration)' == 'Debug' " />
     <Exec Command="npm run release" Condition=" '$(Configuration)' == 'Release' " />
   </Target>
-
-	<Target Name="Tailwind" BeforeTargets="Compile">
-		<Exec Command="npx tailwindcss -i ./Styles/app.css -o ./wwwroot/app.css" />
-	</Target>
-
+  <Target Name="Tailwind" BeforeTargets="Compile">
+    <Exec Command="npx tailwindcss -i ./Styles/app.css -o ./wwwroot/app.css" />
+  </Target>
   <Target Name="PublishContainer" />
 </Project>

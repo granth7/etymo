@@ -14,6 +14,40 @@
         }
       }
     },
+    "keycloak": {
+      "type": "container.v0",
+      "image": "quay.io/keycloak/keycloak:26.0",
+      "args": [
+        "start",
+        "--import-realm"
+      ],
+      "bindMounts": [
+        {
+          "source": "../realms",
+          "target": "/opt/keycloak/data/import",
+          "readOnly": false
+        }
+      ],
+      "volumes": [
+        {
+          "name": "etymo.apphost-6a09035998-keycloak-data",
+          "target": "/opt/keycloak/data",
+          "readOnly": false
+        }
+      ],
+      "env": {
+        "KEYCLOAK_ADMIN": "admin",
+        "KEYCLOAK_ADMIN_PASSWORD": "{keycloak-password.value}"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "targetPort": 8080
+        }
+      }
+    },
     "etymo-apiservice": {
       "type": "project.v0",
       "path": "../etymo.ApiService/etymo.ApiService.csproj",
@@ -22,7 +56,9 @@
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES": "true",
         "OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY": "in_memory",
         "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
-        "HTTP_PORTS": "{etymo-apiservice.bindings.http.targetPort}"
+        "HTTP_PORTS": "{etymo-apiservice.bindings.http.targetPort}",
+        "ConnectionStrings__existingPostgres": "{existingPostgres.connectionString}",
+        "services__keycloak__http__0": "{keycloak.bindings.http.url}"
       },
       "bindings": {
         "http": {
@@ -47,6 +83,7 @@
         "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
         "HTTP_PORTS": "{etymo-webfrontend.bindings.http.targetPort}",
         "ConnectionStrings__cache": "{cache.connectionString}",
+        "services__keycloak__http__0": "{keycloak.bindings.http.url}",
         "services__etymo-apiservice__http__0": "{etymo-apiservice.bindings.http.url}",
         "services__etymo-apiservice__https__0": "{etymo-apiservice.bindings.https.url}"
       },
@@ -62,6 +99,21 @@
           "protocol": "tcp",
           "transport": "http",
           "external": true
+        }
+      }
+    },
+    "keycloak-password": {
+      "type": "parameter.v0",
+      "value": "{keycloak-password.inputs.value}",
+      "inputs": {
+        "value": {
+          "type": "string",
+          "secret": true,
+          "default": {
+            "generate": {
+              "minLength": 22
+            }
+          }
         }
       }
     }

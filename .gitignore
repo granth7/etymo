@@ -368,3 +368,4 @@ etymo_venv/
 /requirements.txt
 /package.json
 /package-lock.json
+/etymo.Web/wwwroot/app.css

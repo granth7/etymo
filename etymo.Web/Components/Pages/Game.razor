@@ -1,299 +1,268 @@
 ﻿@page "/"
+
+@using Microsoft.AspNetCore.Components.Authorization
 @attribute [StreamRendering(true)]
 @attribute [OutputCache(Duration = 5)]
 @rendermode InteractiveServer
-
 @inject MorphemeApiClient MorphemeApi
 @inject NavigationManager _navigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 @using etymo.Web.Components.Extensions
 
-@if (morphemesAnswerKey == null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <div class="navbar bg-base-100">
-        <div class="navbar-start">
-            <div class="dropdown">
-                <div tabindex="0" role="button" class="btn btn-ghost btn-circle">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="h-5 w-5"
-                         fill="none"
-                         viewBox="0 0 24 24"
-                         stroke="currentColor">
-                        <path stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M4 6h16M4 12h16M4 18h7" />
-                    </svg>
-                </div>
-                <ul tabindex="0"
-                    class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
-                    <li>
-                        <a @onclick="@(e => NavigateToUri("/"))">Latin & Greek Prefixes</a>
-                    </li>
-                    <li>
-                        <a @onclick="@(e => NavigateToUri("/?gameType=latinSuffixes"))">Latin Suffixes</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-        <div class="navbar-center">
-            <a class="btn btn-ghost text-xl">etymo (testing)</a>
-        </div>
+    @if (morphemesAnswerKey == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <div class="grid grid-cols-7 gap-4">
 
-        <div class="navbar-end" @onclick="@(e => NavigateToUri("/"))">
-            <div class="icon btn" />
-        </div>
-    </div>
+            @* Show the game over modal if the game has ended due to a loss. *@
+            @if (showGameOverModal)
+            {
+                showResults = true;
+                <dialog id="my_modal_1" class="modal modal-bottom sm:modal-middle @openGameOverModal">
+                    <div class="modal-box">
+                        <h3 class="text-lg font-bold">Game Over!</h3>
+                        <p class="py-4">Good try! Press 'New Game' to try new words, or press 'close' to see your results.</p>
+                        <div class="modal-action">
+                            <form method="dialog">
+                                <!-- if there is a button in form, it will close the modal -->
+                                <button class="btn" @onclick="@(e => NavigateToUri("/"))">New Game</button>
+                                <button class="btn" @onclick="CloseModal">Close</button>
+                            </form>
+                        </div>
+                    </div>
+                    <form method="dialog" class="modal-backdrop">
+                        <button @onclick="CloseModal">close</button>
+                    </form>
+                </dialog>
+            }
 
-    <div class="grid grid-cols-7 gap-4">
+            @* Show the game won modal if the game has ended due to a win. *@
+            @if (showGameWonModal)
+            {
+                showResults = true;
+                <dialog id="my_modal_1" class="modal modal-bottom sm:modal-middle @openGameWonModal">
+                    <div class="modal-box">
+                        <h3 class="text-lg font-bold">Congratulations!</h3>
+                        <p class="py-4">You did it! Press 'New Game' to try new words, or press 'close' to see your results.</p>
+                        <div class="modal-action">
+                            <form method="dialog">
+                                <!-- if there is a button in form, it will close the modal -->
+                                <button class="btn" @onclick="@(e => NavigateToUri("/"))">New Game</button>
+                                <button class="btn" @onclick="CloseModal">Close</button>
+                            </form>
+                        </div>
+                    </div>
+                    <form method="dialog" class="modal-backdrop">
+                        <button @onclick="CloseModal">close</button>
+                    </form>
+                </dialog>
+            }
 
-        @* Show the game over modal if the game has ended due to a loss. *@
-        @if (showGameOverModal)
-        {
-            showResults = true;
-            <dialog id="my_modal_1" class="modal modal-bottom sm:modal-middle @openGameOverModal">
-                <div class="modal-box">
-                    <h3 class="text-lg font-bold">Game Over!</h3>
-                    <p class="py-4">Good try! Press 'New Game' to try new words, or press 'close' to see your results.</p>
-                    <div class="modal-action">
-                        <form method="dialog">
-                            <!-- if there is a button in form, it will close the modal -->
-                            <button class="btn" @onclick="@(e => NavigateToUri("/"))">New Game</button>
-                            <button class="btn" @onclick="CloseModal">Close</button>
-                        </form>
+            @* Core logic while game is still in progress. *@
+            @if (showResults == false)
+            {
+                @* Display alert toast when a submitted word has been already guessed. *@
+                <div class="toast toast-top toast-center toast-middle" style="display:@(showAlreadyGuessedAlert ? "inline" : "none" )">
+                    <div role="alert" class="alert alert-warning">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                                class="h-6 w-6 shrink-0 stroke-current"
+                                fill="none"
+                                viewBox="0 0 24 24">
+                            <path stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Already guessed!</span>
                     </div>
                 </div>
-                <form method="dialog" class="modal-backdrop">
-                    <button @onclick="CloseModal">close</button>
-                </form>
-            </dialog>
-        }
 
-        @* Show the game won modal if the game has ended due to a win. *@
-        @if (showGameWonModal)
-        {
-            showResults = true;
-            <dialog id="my_modal_1" class="modal modal-bottom sm:modal-middle @openGameWonModal">
-                <div class="modal-box">
-                    <h3 class="text-lg font-bold">Congratulations!</h3>
-                    <p class="py-4">You did it! Press 'New Game' to try new words, or press 'close' to see your results.</p>
-                    <div class="modal-action">
-                        <form method="dialog">
-                            <!-- if there is a button in form, it will close the modal -->
-                            <button class="btn" @onclick="@(e => NavigateToUri("/"))">New Game</button>
-                            <button class="btn" @onclick="CloseModal">Close</button>
-                        </form>
+                @* Display alert toast when a submitted word has been guessed correctly. *@
+                <div class="toast toast-top toast-center toast-middle" style="display:@(showCorrectGuessAlert ? "inline" : "none" )">
+                    <div role="alert" class="alert alert-success">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                                class="h-6 w-6 shrink-0 stroke-current"
+                                fill="none"
+                                viewBox="0 0 24 24">
+                            <path stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <span>correct!</span>
+                        </svg>
                     </div>
                 </div>
-                <form method="dialog" class="modal-backdrop">
-                    <button @onclick="CloseModal">close</button>
-                </form>
-            </dialog>
-        }
 
-        @* Core logic while game is still in progress. *@
-        @if (showResults == false)
-        {
-            @* Display alert toast when a submitted word has been already guessed. *@
-            <div class="toast toast-top toast-center toast-middle" style="display:@(showAlreadyGuessedAlert ? "inline" : "none" )">
-                <div role="alert" class="alert alert-warning">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="h-6 w-6 shrink-0 stroke-current"
-                         fill="none"
-                         viewBox="0 0 24 24">
-                        <path stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>Already guessed!</span>
+                @* Display alert toast when a submitted word has been guessed incorrectly. *@
+                <div class="toast toast-top toast-center toast-middle" style="display:@(showIncorrectGuessAlert ? "inline" : "none" )">
+                    <div role="alert" class="alert alert-error">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                                class="h-6 w-6 shrink-0 stroke-current"
+                                fill="none"
+                                viewBox="0 0 24 24">
+                            <path stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <span>incorrect...</span>
+                        </svg>
+                    </div>
                 </div>
-            </div>
 
-            @* Display alert toast when a submitted word has been guessed correctly. *@
-            <div class="toast toast-top toast-center toast-middle" style="display:@(showCorrectGuessAlert ? "inline" : "none" )">
-                <div role="alert" class="alert alert-success">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="h-6 w-6 shrink-0 stroke-current"
-                         fill="none"
-                         viewBox="0 0 24 24">
-                        <path stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        <span>correct!</span>
-                    </svg>
-                </div>
-            </div>
+                <br />
 
-            @* Display alert toast when a submitted word has been guessed incorrectly. *@
-            <div class="toast toast-top toast-center toast-middle" style="display:@(showIncorrectGuessAlert ? "inline" : "none" )">
-                <div role="alert" class="alert alert-error">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="h-6 w-6 shrink-0 stroke-current"
-                         fill="none"
-                         viewBox="0 0 24 24">
-                        <path stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        <span>incorrect...</span>
-                    </svg>
-                </div>
-            </div>
+                <h2 class="grid-item text-2xl font-bold col-start-2 col-span-5 ">Match the prefixes!</h2>
 
-            <h2 class="grid-item text-2xl font-bold col-start-2 col-span-5 ">Match the prefixes!</h2>
-
-            <h2 class="grid-item text-1xl font-bold col-start-2 col-span-5">@numberGuessedCorrectly out of @morphemesAnswerKey.Length guessed</h2>
+                <h2 class="grid-item text-1xl font-bold col-start-2 col-span-5">@numberGuessedCorrectly out of @morphemesAnswerKey.Length guessed</h2>
 
                 @* Render cards if they have yet to be guessed correctly in a slide carousel. *@
                 <div class="carousel rounded-box col-start-2 col-span-5 md:col-span-3 md:col-start-3">
-                @foreach (var morpheme in morphemesAnswerKey)
-                {
-                    var indexOfCurrentMorpheme = Array.IndexOf(morphemesAnswerKey, morpheme);
-
-                    <div id="slide@(indexOfCurrentMorpheme)" class="carousel-item card relative w-full"
-                         style="display:@(morphemesAnswerKey[indexOfCurrentMorpheme].GuessedCorrectly ? "none" : "inline" )">
-                        <div class="card bg-@PickCardColor(indexOfCurrentMorpheme) place-content-center text-@PickCardColor(indexOfCurrentMorpheme)-content shadow-md">
-                            <div class="card-body grid" style="display: flex; align-items: center;">
-
-                                @* Add a hyphen before for suffixes, and after for prefixes in card title. *@
-                                @if (gameType.Contains("Suffixes"))
-                                {
-                                    <h2 class="card-title col-start-2 col-span-3 absolute -translate-y-1/2">-@morphemesAnswerKey[indexOfCurrentMorpheme].Kvp.Key</h2>
-                                }
-                                else if (gameType.Contains("Prefixes"))
-                                {
-                                    <h2 class="card-title col-start-2 col-span-3 absolute -translate-y-1/2">@morphemesAnswerKey[indexOfCurrentMorpheme].Kvp.Key-</h2>
-                                }
-                                else
-                                {
-                                    <h2 class="card-title col-start-2 col-span-3 absolute -translate-y-1/2">@morphemesAnswerKey[indexOfCurrentMorpheme].Kvp.Key</h2>
-                                }
-
-                            </div>
-                        </div>
-
-                        @* Set card previous and next indexes when the game starts and when cards are removed due to a correct guess. *@
-                        @if ((cardCount == morphemesAnswerKey.Length) || ((cardCount < oldCardCount) && cardCount > 1))
-                        {
-                            morpheme.PreviousIndex = FindPreviousIndex(indexOfCurrentMorpheme, morphemesAnswerKey.Length);
-                            morpheme.NextIndex = FindNextIndex(indexOfCurrentMorpheme, morphemesAnswerKey.Length);
-                        }
-
-                        @* Render 'previous' and 'next' arrows for navigating back and forth through multiple slides. *@
-                        @if (cardCount > 1)
-                        {
-                            <div class="absolute left-5 right-5 top-1/2 flex -translate-y-1/2 transform justify-between">
-                                @* When an arrow is clicked, put the card that is navigated to on top. *@
-                                <a href="#slide@(morpheme.PreviousIndex)" class="btn btn-circle" @onclick="() => PutMorphemeOnTop(morpheme.PreviousIndex)">❮</a>
-                                <a href="#slide@(morpheme.NextIndex)" class="btn btn-circle" @onclick="() => PutMorphemeOnTop(morpheme.NextIndex)">❯</a>
-                            </div>
-                        }
-
-                        @if (cardCount == 1)
-                        {
-                            morpheme.IsOnTop = true;
-                        }
-                    </div>
-                }
-            </div>
-
-            @* Render definitons in a random order. *@
-            <div class="grid-item col-end-7 col-span-5" style="flex-wrap:wrap-reverse">
-                @foreach (var morpheme in morphemesAnswerKey)
-                {
-                    var indexOfCurrentMorpheme = Array.IndexOf(morphemesAnswerKey, morpheme);
-                    var displayDefinition = randomDefinitions?[indexOfCurrentMorpheme];
-                    var morphemeOfRandomDefinition = Array.Find(morphemesAnswerKey, m => m.Kvp.Value == displayDefinition);
-                    var indexOfRandomDefinition = Array.IndexOf(morphemesAnswerKey, morphemeOfRandomDefinition);
-
-
-                    <input class="btn"
-                           type="radio"
-                           name="options"
-                           aria-label="@displayDefinition"
-                           checked="@((selectedDefinition != null) && displayDefinition == selectedDefinition)"
-                           disabled="@morphemesAnswerKey[indexOfRandomDefinition].GuessedCorrectly"
-                           @onclick="() => SelectDefinition(displayDefinition)" />
-                }
-            </div>
-
-            @* Render the mistakes that can be made before losing with inert radio buttons. *@
-            <div class="join col-start-2 col-span-5 place-content-center">
-                <div class="text-base font-bold">Mistakes left: &nbsp;&nbsp;</div>
-
-                <div class="col-span-3">
-                    @for (int i = 1; i <= 3; i++)
+                    @foreach (var morpheme in morphemesAnswerKey)
                     {
-                        <input type="radio" name="radio-@i" class="radio" checked="@(i <= mistakesRemaining ? true : false)" inert/>
+                        var indexOfCurrentMorpheme = Array.IndexOf(morphemesAnswerKey, morpheme);
+
+                        <div id="slide@(indexOfCurrentMorpheme)" class="carousel-item card relative w-full"
+                                style="display:@(morphemesAnswerKey[indexOfCurrentMorpheme].GuessedCorrectly ? "none" : "inline" )">
+                            <div class="card bg-@PickCardColor(indexOfCurrentMorpheme) place-content-center text-@PickCardColor(indexOfCurrentMorpheme)-content shadow-md">
+                                <div class="card-body grid" style="display: flex; align-items: center;">
+
+                                    @* Add a hyphen before for suffixes, and after for prefixes in card title. *@
+                                    @if (gameType.Contains("Suffixes"))
+                                    {
+                                        <h2 class="card-title col-start-2 col-span-3 absolute -translate-y-1/2">-@morphemesAnswerKey[indexOfCurrentMorpheme].Kvp.Key</h2>
+                                    }
+                                    else if (gameType.Contains("Prefixes"))
+                                    {
+                                        <h2 class="card-title col-start-2 col-span-3 absolute -translate-y-1/2">@morphemesAnswerKey[indexOfCurrentMorpheme].Kvp.Key-</h2>
+                                    }
+                                    else
+                                    {
+                                        <h2 class="card-title col-start-2 col-span-3 absolute -translate-y-1/2">@morphemesAnswerKey[indexOfCurrentMorpheme].Kvp.Key</h2>
+                                    }
+
+                                </div>
+                            </div>
+
+                            @* Set card previous and next indexes when the game starts and when cards are removed due to a correct guess. *@
+                            @if ((cardCount == morphemesAnswerKey.Length) || ((cardCount < oldCardCount) && cardCount > 1))
+                            {
+                                morpheme.PreviousIndex = FindPreviousIndex(indexOfCurrentMorpheme, morphemesAnswerKey.Length);
+                                morpheme.NextIndex = FindNextIndex(indexOfCurrentMorpheme, morphemesAnswerKey.Length);
+                            }
+
+                            @* Render 'previous' and 'next' arrows for navigating back and forth through multiple slides. *@
+                            @if (cardCount > 1)
+                            {
+                                <div class="absolute left-5 right-5 top-1/2 flex -translate-y-1/2 transform justify-between">
+                                    @* When an arrow is clicked, put the card that is navigated to on top. *@
+                                    <a href="#slide@(morpheme.PreviousIndex)" class="btn btn-circle" @onclick="() => PutMorphemeOnTop(morpheme.PreviousIndex)">❮</a>
+                                    <a href="#slide@(morpheme.NextIndex)" class="btn btn-circle" @onclick="() => PutMorphemeOnTop(morpheme.NextIndex)">❯</a>
+                                </div>
+                            }
+
+                            @if (cardCount == 1)
+                            {
+                                morpheme.IsOnTop = true;
+                            }
+                        </div>
                     }
                 </div>
-            </div>
 
-            @* Render clear and submit buttons. *@
-            <div class="join col-start-2 col-span-5 place-content-center">
-                <div>
-                    <button class="btn w-32 rounded-full" @onclick="() => ClearDefinition()">CLEAR</button>
+                @* Render definitons in a random order. *@
+                <div class="grid-item col-end-7 col-span-5" style="flex-wrap:wrap-reverse">
+                    @foreach (var morpheme in morphemesAnswerKey)
+                    {
+                        var indexOfCurrentMorpheme = Array.IndexOf(morphemesAnswerKey, morpheme);
+                        var displayDefinition = randomDefinitions?[indexOfCurrentMorpheme];
+                        var morphemeOfRandomDefinition = Array.Find(morphemesAnswerKey, m => m.Kvp.Value == displayDefinition);
+                        var indexOfRandomDefinition = Array.IndexOf(morphemesAnswerKey, morphemeOfRandomDefinition);
+
+
+                        <input class="btn"
+                                type="radio"
+                                name="options"
+                                aria-label="@displayDefinition"
+                                checked="@((selectedDefinition != null) && displayDefinition == selectedDefinition)"
+                                disabled="@morphemesAnswerKey[indexOfRandomDefinition].GuessedCorrectly"
+                                @onclick="() => SelectDefinition(displayDefinition)" />
+                    }
                 </div>
 
-                <div>
-                    @if (selectedDefinition != null && justMadeAMistake == false && showAlreadyGuessedAlert == false && showIncorrectGuessAlert == false && showCorrectGuessAlert == false)
+                @* Render the mistakes that can be made before losing with inert radio buttons. *@
+                <div class="join col-start-2 col-span-5 place-content-center">
+                    <div class="text-base font-bold">Mistakes left: &nbsp;&nbsp;</div>
+
+                    <div class="col-span-3">
+                        @for (int i = 1; i <= 3; i++)
+                        {
+                            <input type="radio" name="radio-@i" class="radio" checked="@(i <= mistakesRemaining ? true : false)" inert />
+                        }
+                    </div>
+                </div>
+
+                @* Render clear and submit buttons. *@
+                <div class="join col-start-2 col-span-5 place-content-center">
+                    <div>
+                        <button class="btn w-32 rounded-full" @onclick="() => ClearDefinition()">CLEAR</button>
+                    </div>
+
+                    <div>
+                        @if (selectedDefinition != null && justMadeAMistake == false && showAlreadyGuessedAlert == false && showIncorrectGuessAlert == false && showCorrectGuessAlert == false)
+                        {
+                            <button class="btn btn-enabled w-32 rounded-full aspect" @onclick="() => Submit()">SUBMIT</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-disabled w-32 rounded-full">SUBMIT</button>
+                        }
+                    </div>
+                </div>
+
+                <br />
+            }
+
+            @if (showResults)
+            {
+                <h1 class="text-2xl font-bold col-start-2 md:col-start-3 col-span-5">Answers:</h1>
+                @for (int i = 0; i < morphemesAnswerKey.Length; i++)
+                {
+                    <div class="col-start-2 col-span-5 md:col-span-3 md:col-start-3">
+                        <div class="card bg-base-100 shadow-xl">
+                            <div class="card-body bg-@PickCardColor(i) text-@PickCardColor(i)-content rounded" style="padding: 10px">
+                                <h2 class="card-title">@morphemesAnswerKey[i].Kvp.Key-</h2>
+                                <p class="card-description">@morphemesAnswerKey[i].Kvp.Value</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <h1 class="grid-item text-1xl font-bold col-start-2 col-span-5">@numberGuessedCorrectly out of @morphemesAnswerKey.Length correct</h1>
+
+                {
+                    var mistakesMade = mistakesAvailable - mistakesRemaining;
+
+                    if (mistakesMade == 1)
                     {
-                        <button class="btn btn-enabled w-32 rounded-full aspect" @onclick="() => Submit()">SUBMIT</button>
+                        <h1 class="grid-item text-1xl font-bold col-start-2 col-span-5">@mistakesMade mistake</h1>
                     }
                     else
                     {
-                        <button class="btn btn-disabled w-32 rounded-full">SUBMIT</button>
+                        <h1 class="grid-item text-1xl font-bold col-start-2 col-span-5">@mistakesMade mistakes</h1>
                     }
-                </div>
-            </div>
 
-            <br />
-        }
-
-        @if (showResults)
-        {
-            <h1 class="text-2xl font-bold col-start-2 md:col-start-3 col-span-5">Answers:</h1>
-            @for (int i = 0; i < morphemesAnswerKey.Length; i++)
-            {
-                <div class="col-start-2 col-span-5 md:col-span-3 md:col-start-3">
-                    <div class="card bg-base-100 shadow-xl">
-                        <div class="card-body bg-@PickCardColor(i) text-@PickCardColor(i)-content rounded" style="padding: 10px">
-                            <h2 class="card-title">@morphemesAnswerKey[i].Kvp.Key-</h2>
-                            <p class="card-description">@morphemesAnswerKey[i].Kvp.Value</p>
-                        </div>
-                    </div>
-                </div>
-            }
-
-            <h1 class="grid-item text-1xl font-bold col-start-2 col-span-5">@numberGuessedCorrectly out of @morphemesAnswerKey.Length correct</h1>
-
-            {
-                var mistakesMade = mistakesAvailable - mistakesRemaining;
-
-                if (mistakesMade == 1)
-                {
-                    <h1 class="grid-item text-1xl font-bold col-start-2 col-span-5">@mistakesMade mistake</h1>
                 }
-                else
-                {
-                    <h1 class="grid-item text-1xl font-bold col-start-2 col-span-5">@mistakesMade mistakes</h1>
-                }
-                
+
+                <button class="btn btn-enabled w-32 rounded col-end-6" @onclick="@(e => NavigateToUri("/"))">NEW GAME</button>
             }
+        </div>
+    }
 
-            <button class="btn btn-enabled w-32 rounded col-end-6" @onclick="@(e => NavigateToUri("/"))">NEW GAME</button>
-        }
-    </div>
-}
-
-@code
-{
+    @code
+    {
     public required Morpheme[] morphemesAnswerKey;
     private List<string>? randomDefinitions;
     private int cardCount;
@@ -317,11 +286,14 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
         var firstQueryParameter = _navigationManager.GetQueryParameters();
         firstQueryParameter = firstQueryParameter == "" ? "latinPrefixes" : firstQueryParameter;
         gameType = firstQueryParameter;
 
-        // Remove fragment from url paramaters to avoid jumping to previous href on refresh. 
+        // Remove fragment from url paramaters to avoid jumping to previous href on refresh.
         _navigationManager.RemoveFragment();
 
         morphemesAnswerKey = await MorphemeApi.GetMorphemesAsync(gameType: firstQueryParameter);
