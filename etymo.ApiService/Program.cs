@@ -34,10 +34,10 @@ builder.Services.AddScoped<PostgresService>();
 
 
 builder.Services.AddAuthentication()
-                .AddKeycloakJwtBearer("keycloak", realm: "WeatherShop", options =>
+                .AddKeycloakJwtBearer("keycloak", realm: "Etymo", options =>
                 {
                     options.RequireHttpsMetadata = false;
-                    options.Audience = "weather.api";
+                    options.Audience = "etymo.api";
                 });
 
 builder.Services.AddAuthorizationBuilder();

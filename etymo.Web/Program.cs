@@ -29,11 +29,11 @@ builder.Services.AddHttpClient<MorphemeApiClient>(client =>
 var oidcScheme = OpenIdConnectDefaults.AuthenticationScheme;
 
 builder.Services.AddAuthentication(oidcScheme)
-                .AddKeycloakOpenIdConnect("keycloak", realm: "WeatherShop", oidcScheme, options =>
+                .AddKeycloakOpenIdConnect("keycloak", realm: "Etymo", oidcScheme, options =>
                 {
-                    options.ClientId = "WeatherWeb";
+                    options.ClientId = "EtymoWeb";
                     options.ResponseType = OpenIdConnectResponseType.Code;
-                    options.Scope.Add("weather:all");
+                    options.Scope.Add("etymo:all");
                     options.RequireHttpsMetadata = false;
                     options.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Name;
                     options.SaveTokens = true;
