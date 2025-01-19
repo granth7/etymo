@@ -20,9 +20,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "realms", "realms", "{C4DCBE15-F74D-4919-8B1F-165990E131B7}"
-	ProjectSection(SolutionItems) = preProject
-		realms\etymo-realm.json = realms\etymo-realm.json
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
