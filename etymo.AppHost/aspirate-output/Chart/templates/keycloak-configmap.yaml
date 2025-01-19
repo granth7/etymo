@@ -1,7 +1,7 @@
 apiVersion: v1
 data:
   KEYCLOAK_ADMIN: admin
-  KEYCLOAK_ADMIN_PASSWORD: wKthi9zuRIPmOVsysM!7IS
+  KEYCLOAK_ADMIN_PASSWORD: LWTpi3oDs8hDaoFjFPv9HO
   OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
   OTEL_SERVICE_NAME: keycloak
 kind: ConfigMap
