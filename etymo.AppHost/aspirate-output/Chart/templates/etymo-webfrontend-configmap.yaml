@@ -6,6 +6,7 @@ data:
   ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
   HTTP_PORTS: "8080"
   ConnectionStrings__cache: cache:6379
+  services__keycloak__http__0: http://keycloak:8080
   services__etymo-apiservice__http__0: http://etymo-apiservice:8080
   OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
   OTEL_SERVICE_NAME: etymo-webfrontend
