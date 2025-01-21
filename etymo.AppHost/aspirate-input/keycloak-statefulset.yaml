@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations: {}
+  labels:
+    app: keycloak
+  name: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  serviceName: keycloak
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        app: keycloak
+    spec:
+      containers:
+      - args:
+        - start
+        - --import-realm
+        envFrom:
+        - configMapRef:
+            name: keycloak
+        image: '{{ .Values.images.keycloak }}'
+        imagePullPolicy: IfNotPresent
+        name: keycloak
+        ports:
+        - containerPort: 8080
+          name: http
+        volumeMounts:
+        - mountPath: /opt/keycloak/data
+          name: etymo-apphost-6a09035998-keycloak-data
+        - mountPath: /opt/keycloak/data/import/etymo-realm.json 
+          subPath: etymo-realm.json
+          name: etymo-apphost-6a09035998-keycloak-data
+      volumes:
+      - name: etymo-apphost-6a09035998-keycloak-data
+        configMap:
+          name: keycloak
+          items:
+          - key: etymo-realm.json
+            path: etymo-realm.json
+      terminationGracePeriodSeconds: 180
+  volumeClaimTemplates:
+  - metadata:
+      name: etymo-apphost-6a09035998-keycloak-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: openebs-hostpath
