@@ -35,14 +35,11 @@ spec:
           name: etymo-apphost-6a09035998-keycloak-data
         - mountPath: /opt/keycloak/data/import/etymo-realm.json 
           subPath: etymo-realm.json
-          name: etymo-apphost-6a09035998-keycloak-data
+          name: etymo-apphost-6a09035998-keycloak-data-import
       volumes:
-      - name: etymo-apphost-6a09035998-keycloak-data
+      - name: etymo-apphost-6a09035998-keycloak-data-import
         configMap:
           name: keycloak
-          items:
-          - key: etymo-realm.json
-            path: etymo-realm.json
       terminationGracePeriodSeconds: 180
   volumeClaimTemplates:
   - metadata:
