@@ -12,6 +12,16 @@ expose:
       path: /
       pathType: Prefix
       hosts: [\"etymo.your.domain\"]
+  keycloak:
+    ingress:
+      enabled: false
+      ingressClassName: internal
+      annotations: {}
+      labels: {}
+      path: /
+      pathType: Prefix
+      hosts: [\"sso.etymo.your.domain\"]
+      secretName: \"tls.secret\"
 secrets:
   connectionStrings:
     existingPostgres: \"secret-name/secret-key\"
