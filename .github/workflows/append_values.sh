@@ -22,7 +22,7 @@ expose:
       pathType: Prefix
       hosts: [\"sso.etymo.your.domain\"]
       tls:
-        - hosts: [\"sso.etymo.your.domain\"]
+        - hosts: \"sso.etymo.your.domain\"
           secretName: \"tls.secret\"
 secrets:
   connectionStrings:
