@@ -1,8 +1,8 @@
 images:
   cache: docker.io/library/redis:7.4
   keycloak: quay.io/keycloak/keycloak:26.0
-  etymoapiservice: ghcr.io/granth7/etymo/etymo-apiservice:0.0.1-272
-  etymowebfrontend: ghcr.io/granth7/etymo/etymo-webfrontend:0.0.1-272
+  etymoapiservice: ghcr.io/granth7/etymo/etymo-apiservice:0.0.1-275
+  etymowebfrontend: ghcr.io/granth7/etymo/etymo-webfrontend:0.0.1-275
   aspiredashboard: mcr.microsoft.com/dotnet/aspire-dashboard:8.0
 
 expose:
@@ -25,8 +25,8 @@ expose:
       pathType: Prefix
       hosts: ["sso.etymo.your.domain"]
       tls:
-        - hosts: "sso.etymo.your.domain"
-          secretName: "tls.secret"
+        hosts: ["sso.etymo.your.domain"]
+        secretName: "tls.secret"
 secrets:
   connectionStrings:
     existingPostgres: "secret-name/secret-key"
