@@ -22,8 +22,8 @@ expose:
       pathType: Prefix
       hosts: [\"sso.etymo.your.domain\"]
       tls:
-        - hosts: \"sso.etymo.your.domain\"
-          secretName: \"tls.secret\"
+        hosts: [\"sso.etymo.your.domain\"]
+        secretName: \"tls.secret\"
 secrets:
   connectionStrings:
     existingPostgres: \"secret-name/secret-key\"

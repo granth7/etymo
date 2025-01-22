@@ -17,6 +17,6 @@ spec:
               service:
                 name: keycloak
   tls:
-    - hosts: {{ .Values.expose.keycloak.ingress.tls.hosts }}
-      secretName: {{ .Values.expose.keycloak.ingress.tls.secretName }}
+    hosts: {{ tpl (index .Values.expose.keycloak.ingress.tls.hosts 0) . }}
+    secretName: {{ .Values.expose.keycloak.ingress.tls.secretName }}
 {{- end }}
