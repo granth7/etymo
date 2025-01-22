@@ -1,0 +1,22 @@
+{{- if .Values.expose.keycloak.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak
+  annotations:
+    {{- toYaml .Values.expose.keycloak.ingress.annotations | nindent 8 }}
+spec:
+  ingressClassName: {{ .Values.expose.keycloak.ingress.ingressClassName }}
+  rules:
+    - host: {{ tpl (index .Values.expose.keycloak.ingress.hosts 0) . }}
+      http:
+        paths: 
+          - path: {{ .Values.expose.keycloak.ingress.path }}
+            pathType: {{ .Values.expose.keycloak.ingress.pathType }}
+            backend:
+              service:
+                name: keycloak
+  tls:
+    - hosts: {{ tpl (index .Values.expose.keycloak.ingress.hosts 0) . }}
+      secretName: {{ .Values.expose.keycloak.ingress.secretName }}
+{{- end }}
