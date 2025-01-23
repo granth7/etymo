@@ -21,6 +21,9 @@ spec:
       - args:
         - start
         - --import-realm
+        - --https-certificate-file=/etc/tls/tls.crt
+        - --https-certificate-key-file=/etc/tls/tls.key
+        - --hostname {{ tpl (index .Values.expose.keycloak.ingress.hosts 0) . }}
         envFrom:
         - configMapRef:
             name: keycloak
@@ -36,10 +39,16 @@ spec:
         - mountPath: /opt/keycloak/data/import/etymo-realm.json 
           subPath: etymo-realm.json
           name: etymo-apphost-6a09035998-keycloak-data-import
+        - mountPath: "/etc/tls"
+          name: tls-secret
+          readOnly: true
       volumes:
       - name: etymo-apphost-6a09035998-keycloak-data-import
         configMap:
           name: keycloak
+      - name: tls-secret
+        secret:
+          secretName: tls.keycloak
       terminationGracePeriodSeconds: 180
   volumeClaimTemplates:
   - metadata:
