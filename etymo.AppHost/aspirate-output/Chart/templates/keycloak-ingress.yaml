@@ -16,6 +16,8 @@ spec:
             backend:
               service:
                 name: keycloak
+                port:
+                  name: http
   tls:
     {{- range .Values.expose.keycloak.ingress.tls }}
     - hosts:
