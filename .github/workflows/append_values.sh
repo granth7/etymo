@@ -24,7 +24,7 @@ expose:
       tls:
         - hosts:
             - \"sso.etymo.your.domain\"
-          secretName: \"tls.secret\"
+          secretName: \"\"
 secrets:
   connectionStrings:
     existingPostgres: \"secret-name/secret-key\"
