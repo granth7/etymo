@@ -23,7 +23,7 @@ spec:
         - --import-realm
         - --https-certificate-file=/etc/tls/tls.crt
         - --https-certificate-key-file=/etc/tls/tls.key
-        - --hostname {{ tpl (index .Values.expose.keycloak.ingress.hosts 0) . }}
+        - --hostname={{ tpl (index .Values.expose.keycloak.ingress.hosts 0) . }}
         envFrom:
         - configMapRef:
             name: keycloak
