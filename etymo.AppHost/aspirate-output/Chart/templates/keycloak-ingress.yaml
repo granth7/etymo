@@ -17,7 +17,7 @@ spec:
               service:
                 name: keycloak
                 port:
-                  name: http
+                  name: https
   tls:
     {{- range .Values.expose.keycloak.ingress.tls }}
     - hosts:

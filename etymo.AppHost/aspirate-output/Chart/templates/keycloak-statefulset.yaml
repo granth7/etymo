@@ -23,7 +23,9 @@ spec:
         - --import-realm
         - --https-certificate-file=/etc/tls/tls.crt
         - --https-certificate-key-file=/etc/tls/tls.key
-        - --hostname={{ tpl (index .Values.expose.keycloak.ingress.hosts 0) . }}
+        - --hostname=https://{{ tpl (index .Values.expose.keycloak.ingress.hosts 0) . }}
+        - --hostname-admin=https://admin.{{ tpl (index .Values.expose.keycloak.ingress.hosts 0) . }}:8443
+        - --hostname-backchannel-dynamic=true
         envFrom:
         - configMapRef:
             name: keycloak
@@ -31,8 +33,8 @@ spec:
         imagePullPolicy: IfNotPresent
         name: keycloak
         ports:
-        - containerPort: 8080
-          name: http
+        - containerPort: 8443
+          name: https
         volumeMounts:
         - mountPath: /opt/keycloak/data
           name: etymo-apphost-6a09035998-keycloak-data
