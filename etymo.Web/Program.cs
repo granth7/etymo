@@ -26,6 +26,9 @@ builder.Services.AddHttpClient<MorphemeApiClient>(client =>
     })
     .AddHttpMessageHandler<AuthorizationHandler>();
 
+// Load the configuration
+var environment = builder.Configuration.GetValue<string>("Environment");
+
 var oidcScheme = OpenIdConnectDefaults.AuthenticationScheme;
 
 builder.Services.AddAuthentication(oidcScheme)
@@ -34,7 +37,7 @@ builder.Services.AddAuthentication(oidcScheme)
                     options.ClientId = "EtymoWeb";
                     options.ResponseType = OpenIdConnectResponseType.Code;
                     options.Scope.Add("etymo:all");
-                    options.RequireHttpsMetadata = false;
+                    options.RequireHttpsMetadata = environment != "Development"; 
                     options.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Name;
                     options.SaveTokens = true;
                     options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
