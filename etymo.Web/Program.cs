@@ -34,6 +34,7 @@ var oidcScheme = OpenIdConnectDefaults.AuthenticationScheme;
 builder.Services.AddAuthentication(oidcScheme)
                 .AddKeycloakOpenIdConnect("keycloak", realm: "Etymo", oidcScheme, options =>
                 {
+                    options.Authority = environment != "Development" ? "https://keycloak/realms/Etymo" : options.Authority; // Explicitly use https in production.
                     options.ClientId = "EtymoWeb";
                     options.ResponseType = OpenIdConnectResponseType.Code;
                     options.Scope.Add("etymo:all");
