@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,10 @@ builder.Services.AddHttpClient<MorphemeApiClient>(client =>
 
 // Load the configuration
 var environment = builder.Configuration.GetValue<string>("Environment");
+
+// Enforce TLS 1.2 or higher globally
+ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
+
 
 var oidcScheme = OpenIdConnectDefaults.AuthenticationScheme;
 
