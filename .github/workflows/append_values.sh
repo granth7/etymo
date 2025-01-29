@@ -20,10 +20,10 @@ expose:
       labels: {}
       path: /
       pathType: Prefix
-      hosts: [\"sso.etymo.your.domain\"]
+      hosts: [\"sso.your.domain\"]
       tls:
         - hosts:
-            - \"sso.etymo.your.domain\"
+            - \"sso.your.domain\"
           secretName: \"\"
 secrets:
   connectionStrings:

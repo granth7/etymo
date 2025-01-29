@@ -30,16 +30,12 @@ builder.Services.AddHttpClient<MorphemeApiClient>(client =>
 // Load the configuration
 var environment = builder.Configuration.GetValue<string>("Environment");
 
-// Enforce TLS 1.2 or higher globally
-ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
-
-
 var oidcScheme = OpenIdConnectDefaults.AuthenticationScheme;
 
 builder.Services.AddAuthentication(oidcScheme)
                 .AddKeycloakOpenIdConnect("keycloak", realm: "Etymo", oidcScheme, options =>
                 {
-                    options.Authority = environment != "Development" ? "https://sso.etymo.hender.tech/realms/Etymo" : options.Authority; // Explicitly use https in production.
+                    options.Authority = environment != "Development" ? "https://sso.hender.tech/realms/Etymo" : options.Authority; // Explicitly use https in production.
                     options.ClientId = "EtymoWeb";
                     options.ResponseType = OpenIdConnectResponseType.Code;
                     options.Scope.Add("etymo:all");
