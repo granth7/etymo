@@ -1,3 +1,7 @@
+using Microsoft.AspNetCore.Mvc;
+using Shared.Models;
+using System.Threading;
+
 namespace etymo.Web;
 
 public class MorphemeApiClient(HttpClient httpClient)
@@ -21,6 +25,26 @@ public class MorphemeApiClient(HttpClient httpClient)
         }
 
         return [.. Morphemes];
+    }
+
+    public async Task<HttpResponseMessage> CreateWordListOverview(WordListOverview wordListOverview)
+    {
+        var response = await httpClient.PostAsJsonAsync($"/word-list-overview", wordListOverview);
+        return response;
+    }
+
+    public async Task<List<WordListOverview>> GetWordListOverviewsByUserIdAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        List<WordListOverview> WordListOverviews = [];
+        await foreach (var wordListOverview in httpClient.GetFromJsonAsAsyncEnumerable<WordListOverview>($"/word-list-overviews?userId={userId}", cancellationToken))
+        {
+            if (wordListOverview is not null)
+            {
+                WordListOverviews.Add(wordListOverview);
+            }
+        }
+
+        return WordListOverviews;
     }
 }
 

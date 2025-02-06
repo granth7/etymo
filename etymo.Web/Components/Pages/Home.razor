@@ -20,9 +20,27 @@
     <Authorized>
         <p>You are logged in!</p>
 
-
         @code
         {
+            [CascadingParameter]
+            private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+            private string? UserName;
+            private string? UserId;
+
+            protected override async Task OnInitializedAsync()
+            {
+                if (AuthenticationStateTask != null)
+                {
+                    var authState = await AuthenticationStateTask;
+                    var user = authState.User;
+
+                    UserName = user.Identity?.Name;
+
+                    // Extract the user's unique ID (sub claim)
+                    UserId = user.FindFirst("sub")?.Value;
+                }
+            }
         }
     </Authorized>
     <NotAuthorized>

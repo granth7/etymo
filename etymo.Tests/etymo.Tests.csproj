@@ -10,10 +10,12 @@
     <PackageReference Include="Aspire.Hosting.Testing" Version="9.0.0" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
-    <PackageReference Include="xunit" Version="2.5.3" />
+	<PackageReference Include="Dapper" Version="2.1.35" />
+	<PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\etymo.ApiService\etymo.ApiService.csproj" />
     <ProjectReference Include="..\etymo.AppHost\etymo.AppHost.csproj" />
   </ItemGroup>
   <ItemGroup>

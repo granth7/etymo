@@ -1,20 +1,35 @@
+using Microsoft.Extensions.Configuration;
+using System.Diagnostics;
+
 var builder = DistributedApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__existingPostgres");
 
 // If the environment variable exists, then the app has been deployed to a cluster. So, connect to the database running in the cluster.
+
+// If the environment variable doesn't exist, then the app is running locally or the cluster secret does not exist, so create one.
+// DEBUG ONLY: If the app is running locally and you want to port-forward to the prod db to debug, follow these steps:
+// 1. Enter the credentials (do not commit) or create a local environment variable, for example:
+// Example: setx ConnectionStrings__existingPostgres "Host=myserver;Database=mydb;Username=myuser;Password=mypassword"
+// 2. Reopen Visual Studio to pick up the changes.
+// 3. Port-forward the prod database: kubectl port-forward service/postgres16-rw 8090:5432 -n database
 if (connectionString != null)
 {
     configuration["ConnectionStrings:existingPostgres"] = connectionString;
 }
-// If the environment variable doesn't exist, then the app is running locally or the cluster secret does not exist.
-// Enter the credentials (do not commit) or create a local environment variable. 
-// Example: setx ConnectionStrings__existingPostgres "Host=myserver;Database=mydb;Username=myuser;Password=mypassword"
-// Reopen Visual Studio to pick up the changes.
+
+// If you want to test locally without port-forwarding, don't set the environment variable.
+// Instead, a local postgres docker container will be spun up. (Development mode only. This is the default mode when debugging.)
 else if (connectionString == null)
 {
-    configuration["ConnectionStrings:existingPostgres"] = "Host=myserver;Database=mydb;Username=myuser;Password=mypassword";
+    configuration["ConnectionStrings:existingPostgres"] = "Host=localhost;Port=5033;Database=etymo_test;Username=postgres;Password=postgres";
+
+    var environment = builder.Configuration.GetValue<string>("Environment");
+    if (environment == "Development")
+    {
+        RunDockerComposeUp();
+    }
 }
 
 var cache = builder.AddRedis("cache");
@@ -38,3 +53,53 @@ builder.AddProject<Projects.etymo_Web>("etymo-webfrontend")
     .WaitFor(apiService);
 
 builder.Build().Run();
+
+// Spin up a postgres container for local debugging, only used in 'Development' mode.
+static void RunDockerComposeUp()
+{
+    try
+    {
+        // Get the path to the workflows directory
+        string currentDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        string workflowsDirectory = Path.Combine(currentDirectory, "../../../../.github/workflows");
+        workflowsDirectory = Path.GetFullPath(workflowsDirectory);
+
+        // Check if docker-compose.yml exists
+        string composeFilePath = Path.Combine(workflowsDirectory, "docker-compose.yml");
+        if (!File.Exists(composeFilePath))
+        {
+            Console.WriteLine($"docker-compose.yml not found at: {composeFilePath}");
+            return;
+        }
+
+        // Start Docker Compose
+        ProcessStartInfo startInfo = new ProcessStartInfo
+        {
+            FileName = "docker-compose",
+            Arguments = $"-f \"{composeFilePath}\" up -d",
+            WorkingDirectory = workflowsDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using Process process = new () { StartInfo = startInfo };
+        process.Start();
+        process.WaitForExit();
+
+        if (process.ExitCode != 0)
+        {
+            string error = process.StandardError.ReadToEnd();
+            Console.WriteLine($"Error running docker-compose: {error}");
+        }
+        else
+        {
+            Console.WriteLine("Docker Compose started and database seeded.");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"An error occurred: {ex.Message}");
+    }
+}

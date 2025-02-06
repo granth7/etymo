@@ -10,6 +10,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\etymo.ServiceDefaults\etymo.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Shared.Models\Shared.Models.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Aspire.StackExchange.Redis.OutputCaching" Version="9.0.0" />
