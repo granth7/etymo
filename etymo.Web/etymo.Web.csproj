@@ -6,7 +6,13 @@
     <NpmLastInstall>node_modules/.last-install</NpmLastInstall>
   </PropertyGroup>
   <ItemGroup>
+    <Content Remove="appsettings.Testing.json" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="tailwind.config.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="appsettings.Testing.json" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\etymo.ServiceDefaults\etymo.ServiceDefaults.csproj" />

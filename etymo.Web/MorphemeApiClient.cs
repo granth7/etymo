@@ -27,6 +27,12 @@ public class MorphemeApiClient(HttpClient httpClient)
         return [.. Morphemes];
     }
 
+    public async Task<HttpResponseMessage> CreateWordList(WordList wordList)
+    {
+        var response = await httpClient.PutAsJsonAsync($"/postgres/word-list", wordList);
+        return response;
+    }
+
     public async Task<HttpResponseMessage> CreateWordListOverview(WordListOverview wordListOverview)
     {
         var response = await httpClient.PostAsJsonAsync($"/word-list-overview", wordListOverview);

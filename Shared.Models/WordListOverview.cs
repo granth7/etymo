@@ -1,9 +1,11 @@
-﻿namespace Shared.Models
+﻿using Shared.Models.Interfaces;
+
+namespace Shared.Models
 {
-    public class WordListOverview
+    public class WordListOverview : ICreatorOwned
     {
         public required Guid Guid { get; set; }
-        public required Guid CreatedByUserGuid { get; set; }
+        public required Guid CreatorGuid { get; set; }
         public required Guid WordListGuid { get; set; }
         public required string Title { get; set; }
 

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Shared.Models;
 
@@ -10,13 +12,16 @@ public static class TestDataHelper
     /// Creates a WordList object with optional parameters.
     /// </summary>
     /// <param name="guid">Optional GUID for the WordList. If not provided, a new GUID will be generated.</param>
+    /// <param name="creatorGuid">Optional GUID of the user who created the WordListOverview. If not provided, a new GUID will be generated.</param>
     /// <param name="words">Optional dictionary of words and definitions. If not provided, a default dictionary will be used.</param>
     /// <returns>A WordList object.</returns>
-    public static WordList CreateWordList(Guid? guid = null, Dictionary<string, string>? words = null)
+    public static WordList CreateWordList(Guid? guid = null, Guid? creatorGuid = null, Dictionary<string, string>? words = null)
     {
         return new WordList
         {
             Guid = guid ?? Guid.NewGuid(),
+            CreatorGuid = creatorGuid ?? Guid.NewGuid(),
+
             Words = words ?? new Dictionary<string, string>
             {
                 { "word1", "definition1" },
@@ -29,7 +34,7 @@ public static class TestDataHelper
     /// Creates a WordListOverview object with optional parameters.
     /// </summary>
     /// <param name="guid">Optional GUID for the WordListOverview. If not provided, a new GUID will be generated.</param>
-    /// <param name="createdByUserGuid">Optional GUID of the user who created the WordListOverview. If not provided, a new GUID will be generated.</param>
+    /// <param name="creatorGuid">Optional GUID of the user who created the WordListOverview. If not provided, a new GUID will be generated.</param>
     /// <param name="wordListGuid">Optional GUID of the associated WordList. If not provided, a new GUID will be generated.</param>
     /// <param name="isPublic">Optional flag indicating if the WordListOverview is public. Default is true.</param>
     /// <param name="upvotes">Optional number of upvotes. Default is 0.</param>
@@ -42,7 +47,7 @@ public static class TestDataHelper
     /// <returns>A WordListOverview object.</returns>
     public static WordListOverview CreateWordListOverview(
         Guid? guid = null,
-        Guid? createdByUserGuid = null,
+        Guid? creatorGuid = null,
         Guid? wordListGuid = null,
         bool isPublic = true,
         int upvotes = 0,
@@ -56,7 +61,7 @@ public static class TestDataHelper
         return new WordListOverview
         {
             Guid = guid ?? Guid.NewGuid(),
-            CreatedByUserGuid = createdByUserGuid ?? Guid.NewGuid(),
+            CreatorGuid = creatorGuid ?? Guid.NewGuid(),
             WordListGuid = wordListGuid ?? Guid.NewGuid(),
             IsPublic = isPublic,
             Upvotes = upvotes,
@@ -71,5 +76,52 @@ public static class TestDataHelper
             CreatedDate = createdDate ?? DateTime.UtcNow,
             LastModifiedDate = lastModifiedDate ?? DateTime.UtcNow
         };  
+    }
+
+    /// <summary>
+    /// Clean up any existing docker containers 
+    /// </summary>
+    public static async Task RunDockerComposeDown()
+    {
+        // Get the path to the workflows directory
+        string currentDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        string workflowsDirectory = Path.Combine(currentDirectory, "../../../../.github/workflows");
+        workflowsDirectory = Path.GetFullPath(workflowsDirectory);
+
+        // Check if docker-compose.yml exists
+        string composeFilePath = Path.Combine(workflowsDirectory, "docker-compose.yml");
+        if (!File.Exists(composeFilePath))
+        {
+            Console.WriteLine($"docker-compose.yml not found at: {composeFilePath}");
+            return;
+        }
+
+        // Start Docker Compose
+        var startInfo = Process.Start(new ProcessStartInfo
+        {
+            FileName = "docker-compose",
+            Arguments = $"-f \"{composeFilePath}\" down",
+            WorkingDirectory = workflowsDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        });
+
+        if (startInfo != null)
+        {
+            await startInfo.WaitForExitAsync();
+        }
+    }
+
+    public static ClaimsPrincipal CreateUserClaimsPrincipalFromGuid(Guid _userGuid)
+    {
+        // Create claims principal for the test user
+        var claims = new List<Claim>
+        {
+            new("sub", _userGuid.ToString()) // Keycloak's user ID
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        return new ClaimsPrincipal(identity);
     }
 }

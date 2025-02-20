@@ -1,24 +1,33 @@
-using etymo.ApiService.Postgres;
-using Npgsql;
 using Dapper;
-using Shared.Models;
 using etymo.ApiService.Postgres.Handlers;
+using etymo.ApiService.Postgres;
 using etymo.Tests.Helpers;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
+using Npgsql;
+using System.Security.Claims;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using etymo.ApiService.Postgres.Filters;
 
-namespace etymo.Tests;
+namespace etymo.Tests.Tests;
 
 public class PostgresControllerTests : IAsyncLifetime
 {
     private readonly NpgsqlConnection _connection;
     private readonly PostgresService _postgresService;
     private readonly PostgresController _postgresController;
-
+    private static Guid _userGuid;
 
     public PostgresControllerTests()
     {
         var connectionString = "Host=localhost;Port=5433;Database=etymo_test;Username=postgres;Password=postgres";
         _connection = new NpgsqlConnection(connectionString);
+
+        _userGuid = new Guid();
 
         // Register custom type handler for Dapper sql queries.
         SqlMapper.AddTypeHandler(new DictionaryTypeHandler());
@@ -42,15 +51,15 @@ public class PostgresControllerTests : IAsyncLifetime
     public async Task GetWordListOverviewsByUserIdAsync_ReturnsWordListOverviews()
     {
         // Arrange
-        var wordList = TestDataHelper.CreateWordList();
-        var wordListOverview = TestDataHelper.CreateWordListOverview(wordListGuid: wordList.Guid);
+        var wordList = TestDataHelper.CreateWordList(creatorGuid: _userGuid);
+        var wordListOverview = TestDataHelper.CreateWordListOverview(creatorGuid: _userGuid, wordListGuid: wordList.Guid);
 
         // Seed test data
         await _postgresService.InsertWordListAsync(wordList);
         await _postgresService.InsertWordListOverviewAsync(wordListOverview);
 
         // Act
-        var response = await _postgresController.GetWordListOverviewsByUserIdAsync(wordListOverview.CreatedByUserGuid);
+        var response = await _postgresController.GetWordListOverviewsByUserIdAsync(wordListOverview.CreatorGuid);
 
         // Assert
         var actionResult = Assert.IsType<OkObjectResult>(response);
@@ -61,7 +70,7 @@ public class PostgresControllerTests : IAsyncLifetime
     public async Task UpsertWordListAsync_ReturnsOk_WhenUpsertIsSuccessful()
     {
         // Arrange
-        var wordList = TestDataHelper.CreateWordList();
+        var wordList = TestDataHelper.CreateWordList(creatorGuid: _userGuid);
 
         // Act - No prior word list, insert it.
         var response = await _postgresController.UpsertWordListAsync(wordList);
@@ -75,8 +84,8 @@ public class PostgresControllerTests : IAsyncLifetime
     public async Task UpsertWordListOverviewAsync_ReturnsOk_WhenUpsertIsSuccessful()
     {
         // Arrange
-        var wordList = TestDataHelper.CreateWordList();
-        var wordListOverview = TestDataHelper.CreateWordListOverview(wordListGuid: wordList.Guid);
+        var wordList = TestDataHelper.CreateWordList(creatorGuid: _userGuid);
+        var wordListOverview = TestDataHelper.CreateWordListOverview(wordListGuid: wordList.Guid, creatorGuid: _userGuid);
 
         // Seed test data
         await _postgresService.InsertWordListAsync(wordList);
@@ -94,7 +103,7 @@ public class PostgresControllerTests : IAsyncLifetime
     public async Task DeleteWordListOverviewAsync_ReturnsNoContent_WhenDeleteIsSuccessful()
     {
         // Arrange
-        var wordList = TestDataHelper.CreateWordList();
+        var wordList = TestDataHelper.CreateWordList(creatorGuid: _userGuid);
         var wordListOverview = TestDataHelper.CreateWordListOverview(wordListGuid: wordList.Guid);
 
         // Seed test data

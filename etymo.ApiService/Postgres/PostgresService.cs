@@ -12,7 +12,7 @@ namespace etymo.ApiService.Postgres
         
         public async Task<IEnumerable<WordListOverview>> SelectWordListOverviewsByUserIdAsync(Guid userId)
         {
-            string sql = $"SELECT * FROM word_list_overview WHERE createdbyuserguid = '{userId}'";
+            string sql = $"SELECT * FROM word_list_overview WHERE creatorguid = '{userId}'";
             return await _connection.QueryAsync<WordListOverview>(sql);
         }
          
@@ -20,11 +20,11 @@ namespace etymo.ApiService.Postgres
         {
             var sql = @"
                 INSERT INTO word_list_overview (
-                    Guid, CreatedByUserGuid, WordListGuid, IsPublic, Upvotes, 
+                    Guid, CreatorGuid, WordListGuid, IsPublic, Upvotes, 
                     Title, Description, Tags, WordSample, CreatedDate, LastModifiedDate
                 )
                 VALUES (
-                    @Guid, @CreatedByUserGuid, @WordListGuid, @IsPublic, @Upvotes, 
+                    @Guid, @CreatorGuid, @WordListGuid, @IsPublic, @Upvotes, 
                     @Title, @Description, @Tags, @WordSample::jsonb, @CreatedDate, @LastModifiedDate
                 )
                 ON CONFLICT (Guid) 
@@ -44,8 +44,8 @@ namespace etymo.ApiService.Postgres
         public async Task<int> InsertWordListAsync(WordList wordList)
         {
             var sql = @"
-                INSERT INTO word_list (Guid, Words)
-                VALUES (@Guid, @Words::jsonb)
+                INSERT INTO word_list (Guid, CreatorGuid, Words)
+                VALUES (@Guid, @CreatorGuid, @Words::jsonb)
                 ON CONFLICT (Guid)
                 DO UPDATE SET
                     Words = EXCLUDED.Words::jsonb;";

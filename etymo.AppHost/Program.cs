@@ -20,13 +20,13 @@ if (connectionString != null)
 }
 
 // If you want to test locally without port-forwarding, don't set the environment variable.
-// Instead, a local postgres docker container will be spun up. (Development mode only. This is the default mode when debugging.)
+// Instead, a local postgres docker container will be spun up. (Development and Testing modes only.)
 else if (connectionString == null)
 {
-    configuration["ConnectionStrings:existingPostgres"] = "Host=localhost;Port=5033;Database=etymo_test;Username=postgres;Password=postgres";
+    configuration["ConnectionStrings:existingPostgres"] = "Host=localhost;Port=5433;Database=etymo_test;Username=postgres;Password=postgres";
 
     var environment = builder.Configuration.GetValue<string>("Environment");
-    if (environment == "Development")
+    if (environment == "Development" || environment == "Testing")
     {
         RunDockerComposeUp();
     }
@@ -54,7 +54,7 @@ builder.AddProject<Projects.etymo_Web>("etymo-webfrontend")
 
 builder.Build().Run();
 
-// Spin up a postgres container for local debugging, only used in 'Development' mode.
+// Spin up a postgres container for local debugging, only used in 'Development' or 'Testing' mode.
 static void RunDockerComposeUp()
 {
     try

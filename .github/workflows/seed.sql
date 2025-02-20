@@ -1,11 +1,12 @@
 CREATE TABLE word_list (
     Guid UUID NOT NULL PRIMARY KEY,
+    CreatorGuid UUID NOT NULL,
     Words JSONB NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS word_list_overview (
     Guid UUID PRIMARY KEY,
-    CreatedByUserGuid UUID NOT NULL,
+    CreatorGuid UUID NOT NULL,
     WordListGuid UUID NOT NULL,
     IsPublic BOOLEAN NOT NULL,
     Upvotes INT NOT NULL,

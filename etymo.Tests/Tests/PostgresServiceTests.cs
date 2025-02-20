@@ -5,7 +5,7 @@ using Shared.Models;
 using etymo.ApiService.Postgres.Handlers;
 using etymo.Tests.Helpers;
 
-namespace etymo.Tests;
+namespace etymo.Tests.Tests;
 
 public class PostgresServiceTests : IAsyncLifetime
 {
@@ -35,6 +35,21 @@ public class PostgresServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task CreateWordList_ReturnsCreated()
+    {
+        // Arrange
+        var wordList = TestDataHelper.CreateWordList();
+
+        // Act
+        await _postgresService.InsertWordListAsync(wordList);
+        var rowsAffected = await _postgresService.InsertWordListAsync(wordList);
+
+        // Assert
+        Assert.Equal(1, rowsAffected);
+    }
+
+
+    [Fact]
     public async Task CreateWordListOverview_ReturnsCreated()
     {
         // Arrange
@@ -59,7 +74,7 @@ public class PostgresServiceTests : IAsyncLifetime
         // Act
         await _postgresService.InsertWordListAsync(wordList);
         await _postgresService.InsertWordListOverviewAsync(wordListOverview);
-        var result = await _postgresService.SelectWordListOverviewsByUserIdAsync(wordListOverview.CreatedByUserGuid);
+        var result = await _postgresService.SelectWordListOverviewsByUserIdAsync(wordListOverview.CreatorGuid);
 
         // Assert
         Assert.NotNull(result);

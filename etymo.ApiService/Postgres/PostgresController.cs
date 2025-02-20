@@ -1,20 +1,21 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using etymo.ApiService.Postgres.Filters;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Models;
 
 namespace etymo.ApiService.Postgres
 {
+    [CreatorOrAdmin]
     [ApiController]
     [Route("[controller]")]
-    [Authorize]
-    public class PostgresController(PostgresService PostgresService) : ControllerBase
+    public class PostgresController(PostgresService postgresService) : ControllerBase
     {
-        private readonly PostgresService _PostgresService = PostgresService;
+        private readonly PostgresService _postgresService = postgresService;
 
         [HttpGet("word-list-overviews")]
         public async Task<IActionResult> GetWordListOverviewsByUserIdAsync([FromBody] Guid userId)
         {
-            var wordListOverviews = await _PostgresService.SelectWordListOverviewsByUserIdAsync(userId);
+            var wordListOverviews = await _postgresService.SelectWordListOverviewsByUserIdAsync(userId);
             if (wordListOverviews == null)
             {
                 return NotFound();
@@ -33,7 +34,7 @@ namespace etymo.ApiService.Postgres
                 return BadRequest("Word list overview cannot be null.");
             }
 
-            var rowsAffected = await _PostgresService.InsertWordListOverviewAsync(wordListOverview);
+            var rowsAffected = await _postgresService.InsertWordListOverviewAsync(wordListOverview);
 
             return Ok(rowsAffected);
         }
@@ -46,7 +47,7 @@ namespace etymo.ApiService.Postgres
                 return BadRequest("Word list cannot be null.");
             }
 
-            var rowsAffected = await _PostgresService.InsertWordListAsync(wordList);
+            var rowsAffected = await _postgresService.InsertWordListAsync(wordList);
 
             return Ok(rowsAffected);
         }
@@ -54,7 +55,7 @@ namespace etymo.ApiService.Postgres
         [HttpDelete("word-list-overview")]
         public async Task<IActionResult> DeleteWordListOverviewAsync([FromBody] Guid guid)
         {
-            bool rowsDeleted = await _PostgresService.DeleteWordListOverviewByGuidAsync(guid);
+            bool rowsDeleted = await _postgresService.DeleteWordListOverviewByGuidAsync(guid);
 
             if (rowsDeleted)
             {
