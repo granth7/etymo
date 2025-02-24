@@ -1,8 +1,6 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using System.Security.Claims;
 using etymo.Tests.Base;
-using etymo.Tests.Handlers;
 using etymo.Tests.Helpers;
 
 namespace etymo.Tests.Tests;

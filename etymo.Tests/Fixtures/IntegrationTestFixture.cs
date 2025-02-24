@@ -19,9 +19,7 @@ namespace etymo.Tests.Fixtures
             HttpClient = new HttpClient();
 
             // Set the environment to Testing.
-            // Currently these values are being overridden by launchsettings.json, so set them there until we can find a workaround.
-            //Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
-            //Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Testing");
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
         }
 
         public async Task InitializeAsync()

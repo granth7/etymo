@@ -1,9 +1,7 @@
 using Dapper;
 using etymo.ApiService.Postgres;
-using etymo.ApiService.Postgres.Filters;
 using etymo.ApiService.Postgres.Handlers;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,7 +45,7 @@ builder.Services.AddAuthentication()
                     options.Audience = "etymo.api";
                 });
 
-if (builder.Environment.IsEnvironment("Testing"))
+if (configuration.GetValue<string>("ASPNETCORE_ENVIRONMENT") == "Testing")
 {
     builder.Services.AddAuthentication(options =>
     {

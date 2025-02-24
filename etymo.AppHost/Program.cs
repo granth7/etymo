@@ -4,6 +4,8 @@ using System.Diagnostics;
 var builder = DistributedApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
+
+var environment = builder.Configuration.GetValue<string>("ASPNETCORE_ENVIRONMENT");
 var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__existingPostgres");
 
 // If the environment variable exists, then the app has been deployed to a cluster. So, connect to the database running in the cluster.
@@ -25,7 +27,6 @@ else if (connectionString == null)
 {
     configuration["ConnectionStrings:existingPostgres"] = "Host=localhost;Port=5433;Database=etymo_test;Username=postgres;Password=postgres";
 
-    var environment = builder.Configuration.GetValue<string>("Environment");
     if (environment == "Development" || environment == "Testing")
     {
         RunDockerComposeUp();
@@ -40,10 +41,17 @@ var keycloak = builder.AddKeycloak("keycloak", 8080)
 
 var existingPostgres = builder.AddConnectionString("existingPostgres");
 
-var apiService = builder.AddProject<Projects.etymo_ApiService>("etymo-apiservice")
-                        .WithReference(existingPostgres)
-                        .WithReference(keycloak)
-                        .WaitFor(keycloak);
+// Start by adding the project with environment variables if testing
+var apiService = environment == "Testing"
+    ? builder.AddProject<Projects.etymo_ApiService>("etymo-apiservice")
+            .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Testing")
+    : builder.AddProject<Projects.etymo_ApiService>("etymo-apiservice");
+
+// Then add the remaining configuration
+apiService = apiService
+            .WithReference(existingPostgres)
+            .WithReference(keycloak)
+            .WaitFor(keycloak);
 
 builder.AddProject<Projects.etymo_Web>("etymo-webfrontend")
     .WithExternalHttpEndpoints()
