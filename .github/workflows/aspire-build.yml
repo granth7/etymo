@@ -65,11 +65,14 @@ jobs:
         run: |
           docker compose up -d
           echo "Waiting for PostgreSQL to start..."
-          while ! pg_isready -h localhost -U postgres -d etymo_test -q; do
+          for i in {1..120}; do
+            if pg_isready -h localhost -p 5433 -U postgres -d etymo_test -q; then
+              echo "PostgreSQL is ready!"
+              break
+            fi
             sleep 1
           done
-          echo "PostgreSQL is ready!"
-          psql -h localhost -U postgres -d etymo_test -c "SELECT 'Database is up!'"
+          psql -h localhost -p 5433 -U postgres -d etymo_test -c "SELECT 'Database is up!'"
         working-directory: .github/workflows/
 
       - name: Test
