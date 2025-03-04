@@ -57,7 +57,9 @@ jobs:
         run: dotnet build --no-restore --configuration Release
       
       - name: Set up Docker Compose
-        uses: docker/compose-action@v2
+        uses: docker/setup-compose-action@v1
+        with:
+          version: latest
 
       - name: Start PostgreSQL and seed database
         run: |
