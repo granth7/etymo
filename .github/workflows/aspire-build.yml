@@ -63,7 +63,7 @@ jobs:
 
       - name: Start PostgreSQL and seed database
         run: |
-          docker-compose up -d
+          docker compose up -d
           sleep 10 # Wait for PostgreSQL to start
           psql -h localhost -U postgres -d etymo_test
         working-directory: .github/workflows/
