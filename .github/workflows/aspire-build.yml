@@ -64,8 +64,12 @@ jobs:
       - name: Start PostgreSQL and seed database
         run: |
           docker compose up -d
-          sleep 10 # Wait for PostgreSQL to start
-          psql -h localhost -U postgres -d etymo_test
+          echo "Waiting for PostgreSQL to start..."
+          while ! pg_isready -h localhost -U postgres -d etymo_test -q; do
+            sleep 1
+          done
+          echo "PostgreSQL is ready!"
+          psql -h localhost -U postgres -d etymo_test -c "SELECT 'Database is up!'"
         working-directory: .github/workflows/
 
       - name: Test
