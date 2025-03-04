@@ -18,19 +18,6 @@ jobs:
   build:
     if: github.ref == 'refs/heads/main' && ! contains(github.event.head_commit.message, 'skip ci') && ! contains(github.event.head_commit.message, 'Merge pull request')
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:latest
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_DB: etymo_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     defaults: 
       run: 
         working-directory: ./${{ github.event.repository.name }}.AppHost
@@ -74,6 +61,7 @@ jobs:
           docker-compose up -d
           sleep 10 # Wait for PostgreSQL to start
           psql -h localhost -U postgres -d etymo_test
+        working-directory: ./workflows/
 
       - name: Test
         run: dotnet test --configuration release --logger trx /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
