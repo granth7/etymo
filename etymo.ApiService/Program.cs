@@ -1,6 +1,7 @@
-using etymo.ApiService;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Dapper;
+using etymo.ApiService.Postgres;
+using etymo.ApiService.Postgres.Handlers;
+using Microsoft.AspNetCore.Authentication;
 using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,10 +29,14 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddProblemDetails();
 
+// Register custom type handler for Dapper sql queries.
+SqlMapper.AddTypeHandler(new DictionaryTypeHandler());
+
 builder.AddNpgsqlDataSource(connectionName: "existingPostgres");
 
 builder.Services.AddScoped<PostgresService>();
 
+builder.Services.AddControllers();
 
 builder.Services.AddAuthentication()
                 .AddKeycloakJwtBearer("keycloak", realm: "Etymo", options =>
@@ -40,7 +45,15 @@ builder.Services.AddAuthentication()
                     options.Audience = "etymo.api";
                 });
 
-builder.Services.AddAuthorizationBuilder();
+if (configuration.GetValue<string>("ASPNETCORE_ENVIRONMENT") == "Testing")
+{
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = "TestAuth";
+        options.DefaultChallengeScheme = "TestAuth";
+    })
+    .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>("TestAuth", _ => { });
+}
 
 var app = builder.Build();
 var latinPrefixJson = File.ReadAllText(@"latinPrefixes.json");
@@ -111,22 +124,9 @@ app.MapGet("/morphemelist", (string gameType) =>
     return null;
 });
 
-//app.MapGet("/privatewordlist", () =>
-//{
-//    // Use the service provider to create a scope and resolve PostgresService 
-//    using (var scope = app.Services.CreateScope())
-//    {
-//        var postgresService = scope.ServiceProvider.GetRequiredService<PostgresService>();
-
-//        // Call a method from PostgresService 
-//        var wordListOverviews = await postgresService.GetPrivateWordListOverviewsAsync();
-
-//        return wordListOverviews;
-//    }
-//}).RequireAuthorization();
-
+app.UseAuthorization();
+app.MapControllers();
 app.MapDefaultEndpoints();
-
 app.Run();
 
 record Morepheme(KeyValuePair<string, string> Kvp)

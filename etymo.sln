@@ -17,12 +17,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\append_values.sh = .github\workflows\append_values.sh
 		.github\workflows\aspire-build.yml = .github\workflows\aspire-build.yml
 		.github\workflows\chart-release.yml = .github\workflows\chart-release.yml
+		.github\workflows\docker-compose.yml = .github\workflows\docker-compose.yml
+		.github\workflows\seed.sql = .github\workflows\seed.sql
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "realms", "realms", "{C4DCBE15-F74D-4919-8B1F-165990E131B7}"
 	ProjectSection(SolutionItems) = preProject
 		realms\etymo-realm.json = realms\etymo-realm.json
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared.Models", "Shared.Models\Shared.Models.csproj", "{D3F8D771-774E-4E98-B31F-8E1202286B9C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,6 +54,10 @@ Global
 		{9FDA2F2C-B7AC-44AC-AAEB-1ADDDBC9A78B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9FDA2F2C-B7AC-44AC-AAEB-1ADDDBC9A78B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9FDA2F2C-B7AC-44AC-AAEB-1ADDDBC9A78B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3F8D771-774E-4E98-B31F-8E1202286B9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3F8D771-774E-4E98-B31F-8E1202286B9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3F8D771-774E-4E98-B31F-8E1202286B9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3F8D771-774E-4E98-B31F-8E1202286B9C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

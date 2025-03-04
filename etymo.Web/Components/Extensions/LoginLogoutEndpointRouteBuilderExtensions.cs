@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 
-namespace etymo.Web;
+namespace etymo.Web.Components.Extensions;
 
 internal static class LoginLogoutEndpointRouteBuilderExtensions
 {

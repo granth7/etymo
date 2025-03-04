@@ -286,9 +286,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-
         var firstQueryParameter = _navigationManager.GetQueryParameters();
         firstQueryParameter = firstQueryParameter == "" ? "latinPrefixes" : firstQueryParameter;
         gameType = firstQueryParameter;

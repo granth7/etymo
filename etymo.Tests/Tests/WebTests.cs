@@ -1,6 +1,7 @@
 using System.Net;
+using System.Net.Http.Json;
 
-namespace etymo.Tests;
+namespace etymo.Tests.Tests;
 
 public class WebTests
 {

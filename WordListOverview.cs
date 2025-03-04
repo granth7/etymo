@@ -1,5 +1,4 @@
-﻿
-namespace etymo.ApiService
+﻿namespace Shared.Models
 {
     public class WordListOverview
     {
@@ -11,7 +10,7 @@ namespace etymo.ApiService
         public required string Title { get; set; }
         public string? Description { get; set; }
         public string[]? Tags { get; set; }
-        public KeyValuePair<string,string>[]? WordSample { get; set; }
+        public KeyValuePair<string, string>[]? WordSample { get; set; }
         public DateTime CreatedDate
         {
             get; set;

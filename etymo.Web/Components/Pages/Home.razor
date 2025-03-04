@@ -4,11 +4,12 @@
 @attribute [StreamRendering(true)]
 @attribute [OutputCache(Duration = 5)]
 @rendermode InteractiveServer
+@inject MorphemeApiClient MorphemeApi
 @inject NavigationManager _navigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 @using etymo.Web.Components.Extensions
-
+@using System.Security.Claims
 
 <PageTitle>Etymo</PageTitle>
 
@@ -20,9 +21,41 @@
     <Authorized>
         <p>You are logged in!</p>
 
-
         @code
         {
+            [CascadingParameter]
+            private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+            private string? UserName;
+            private string? UserId;
+
+            protected override async Task OnInitializedAsync()
+            {
+                if (AuthenticationStateTask != null)
+                {
+                    var authState = await AuthenticationStateTask;
+                    var user = authState.User;
+
+                    UserName = user.Identity?.Name;
+
+                    // Extract the user's unique ID (sub claim)
+                    UserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                        ?? user.FindFirst("sub")?.Value;
+
+                    var wordList =  new Shared.Models.WordList
+                        {
+                            Guid = Guid.NewGuid(),
+                            CreatorGuid = new Guid($"{UserId}"),
+                            Words = new Dictionary<string, string>
+                            {
+                                { "word1", "definition1" },
+                                { "word2", "definition2" }
+                            }
+                        };
+
+                    //var response = await MorphemeApi.CreateWordList(wordList);
+                }
+            }
         }
     </Authorized>
     <NotAuthorized>

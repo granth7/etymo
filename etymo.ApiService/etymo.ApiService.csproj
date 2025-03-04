@@ -5,12 +5,20 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Content Remove="appsettings.Testing.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="appsettings.Testing.json" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Aspire.Npgsql" Version="9.0.0" />
     <PackageReference Include="Aspire.Keycloak.Authentication" Version="9.0.0-preview.5.24551.3" />
+	<PackageReference Include="Dapper" Version="2.1.35" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\etymo.ServiceDefaults\etymo.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Shared.Models\Shared.Models.csproj" />
   </ItemGroup>
   <Target Name="PublishContainer" />
 </Project>

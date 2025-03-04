@@ -55,6 +55,13 @@ jobs:
 
       - name: Build
         run: dotnet build --no-restore --configuration Release
+      
+      - name: Start PostgreSQL and seed database
+        run: |
+          docker-compose up -d
+          sleep 10 # Wait for PostgreSQL to start
+          psql -h localhost -U postgres -d etymo_test
+        working-directory: ./workflows/
 
       - name: Test
         run: dotnet test --configuration release --logger trx /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
