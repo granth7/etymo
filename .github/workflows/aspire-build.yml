@@ -63,6 +63,7 @@ jobs:
 
       - name: Start PostgreSQL and seed database
         run: |
+          export PGPASSWORD=postgres
           docker compose up -d
           echo "Waiting for PostgreSQL to start..."
           for i in {1..120}; do
