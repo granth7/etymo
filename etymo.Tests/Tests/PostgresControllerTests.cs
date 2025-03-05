@@ -2,16 +2,8 @@ using Dapper;
 using etymo.ApiService.Postgres.Handlers;
 using etymo.ApiService.Postgres;
 using etymo.Tests.Helpers;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using Moq;
 using Npgsql;
-using System.Security.Claims;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging;
-using etymo.ApiService.Postgres.Filters;
 
 namespace etymo.Tests.Tests;
 

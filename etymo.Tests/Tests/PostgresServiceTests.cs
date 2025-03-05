@@ -1,7 +1,6 @@
 using etymo.ApiService.Postgres;
 using Npgsql;
 using Dapper;
-using Shared.Models;
 using etymo.ApiService.Postgres.Handlers;
 using etymo.Tests.Helpers;
 
