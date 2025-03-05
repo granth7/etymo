@@ -7,6 +7,7 @@ using etymo.Tests.Helpers;
 
 namespace etymo.Tests.Tests;
 
+[Trait("Category", "Unit")]
 public class PostgresServiceTests : IAsyncLifetime
 {
     private readonly NpgsqlConnection _connection;

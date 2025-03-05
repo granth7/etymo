@@ -15,6 +15,7 @@ using etymo.ApiService.Postgres.Filters;
 
 namespace etymo.Tests.Tests;
 
+[Trait("Category", "Unit")]
 public class PostgresControllerTests : IAsyncLifetime
 {
     private readonly NpgsqlConnection _connection;

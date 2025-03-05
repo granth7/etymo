@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 
 namespace etymo.Tests.Tests;
 
+[Trait("Category", "Integration")]
 public class WebTests
 {
     [Fact]

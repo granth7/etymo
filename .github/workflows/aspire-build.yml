@@ -76,8 +76,12 @@ jobs:
           psql -h localhost -p 5433 -U postgres -d etymo_test -c "SELECT 'Database is up!'"
         working-directory: .github/workflows/
 
-      - name: Test
-        run: dotnet test --configuration release --logger trx /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+      - name: Run Unit Tests
+        run: dotnet test --configuration release --logger trx /p:CollectCoverage=true /p:CoverletOutputFormat=opencover --no-build --filter "Category=Unit"
+        working-directory: ./${{ github.event.repository.name }}.Tests/
+
+      - name: Run Integration Test
+        run: dotnet test --configuration release --logger trx /p:CollectCoverage=true /p:CoverletOutputFormat=opencover --no-build --filter "Category=Integration"
         working-directory: ./${{ github.event.repository.name }}.Tests/
 
       - name: Login to GitHub Container Registry

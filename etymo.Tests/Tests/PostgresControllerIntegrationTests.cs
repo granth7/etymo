@@ -5,6 +5,7 @@ using etymo.Tests.Helpers;
 
 namespace etymo.Tests.Tests;
 
+[Trait("Category", "Integration")]
 public class PostgresControllerIntegrationTests : IntegrationTestBase
 {
     [Fact]
