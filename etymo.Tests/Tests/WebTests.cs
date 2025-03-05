@@ -1,9 +1,10 @@
+using etymo.Tests.Base;
 using System.Net;
 
 namespace etymo.Tests.Tests;
 
 [Trait("Category", "Integration")]
-public class WebTests
+public class WebTests : IntegrationTestBase
 {
     [Fact]
     public async Task GetWebResourceRootReturnsOkStatusCode()
