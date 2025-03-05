@@ -83,8 +83,8 @@ static void RunDockerComposeUp()
         // Start Docker Compose
         ProcessStartInfo startInfo = new ProcessStartInfo
         {
-            FileName = "docker-compose",
-            Arguments = $"-f \"{composeFilePath}\" up -d",
+            FileName = "docker",
+            Arguments = $"compose -f \"{composeFilePath}\" up -d",
             WorkingDirectory = workflowsDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,

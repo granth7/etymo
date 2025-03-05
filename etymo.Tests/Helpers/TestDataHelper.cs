@@ -99,8 +99,8 @@ public static class TestDataHelper
         // Start Docker Compose
         var startInfo = Process.Start(new ProcessStartInfo
         {
-            FileName = "docker-compose",
-            Arguments = $"-f \"{composeFilePath}\" down",
+            FileName = "docker",
+            Arguments = $"compose -f \"{composeFilePath}\" down",
             WorkingDirectory = workflowsDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
