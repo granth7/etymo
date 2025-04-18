@@ -1,7 +1,7 @@
 ﻿using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authentication;
 
-namespace etymo.Web;
+namespace etymo.Web.Components.Handlers;
 
 public class AuthorizationHandler(IHttpContextAccessor httpContextAccessor) : DelegatingHandler
 {

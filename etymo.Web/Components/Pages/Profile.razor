@@ -1,0 +1,676 @@
+﻿@page "/Profile/{guid}"
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using etymo.Web.Components.Services
+
+@attribute [StreamRendering(true)]
+@attribute [OutputCache(Duration = 5)]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject MorphemeApiClient MorphemeApi
+@inject NavigationManager _navigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserStateService UserState
+
+@using Shared.Models
+@using etymo.Web.Components.Extensions
+@using System.Security.Claims
+@using etymo.Web.Components.Helpers
+
+@* Display error or success toast *@
+@if (ShowToast)
+{
+    <div class="toast toast-bottom toast-end z-50">
+        <div class="@ToastClass">
+            <span>@ToastMessage</span>
+            <button class="btn btn-ghost btn-xs" @onclick="ClearToast">Close</button>
+        </div>
+    </div>
+}
+
+@if (ClickedDelete)
+{
+    <dialog id="confirm_delete_modal" class="modal modal-bottom sm:modal-middle @openConfirmDeleteModal">
+        <div class="modal-box">
+            <h3 class="text-lg font-bold">Delete '@toBeDeleted?.Title'?</h3>
+            <p class="py-4">Press 'Delete' to confirm, or press 'Close' to cancel.</p>
+            <div class="modal-action">
+                <form method="dialog">
+                    <!-- if there is a button in form, it will close the modal -->
+                    <button class="btn" @onclick="DeleteWordListOverviewAsync">Delete</button>
+                    <button class="btn" @onclick="CloseModal">Close</button>
+                </form>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button @onclick="CloseModal">close</button>
+        </form>
+    </dialog>
+}
+
+<div class="container mx-auto px-4 py-8">
+
+    <!-- Private Word Lists Feed -->
+    <div class="grid grid-cols-1 gap-6">
+        @if (privateWordListOverviews?.Count > 0)
+        {
+            <div class="flex justify-between items-center mb-6">
+
+                <h2 class="text-2xl font-bold mb-6">Private Word Lists</h2>
+
+                <div class="join">
+                    <button class="join-item btn @(selectedPrivateDateRange == null ? "btn-primary" : "")"
+                            @onclick="() => FilterPrivateByDateRange(null)">
+                        All Time
+                    </button>
+                    <button class="join-item btn @(selectedPrivateDateRange == DateRange.Today ? "btn-primary" : "")"
+                            @onclick="() => FilterPrivateByDateRange(DateRange.Today)">
+                        Today
+                    </button>
+                    <button class="join-item btn @(selectedPrivateDateRange == DateRange.Week ? "btn-primary" : "")"
+                            @onclick="() => FilterPrivateByDateRange(DateRange.Week)">
+                        This Week
+                    </button>
+                    <button class="join-item btn @(selectedPrivateDateRange == DateRange.Month ? "btn-primary" : "")"
+                            @onclick="() => FilterPrivateByDateRange(DateRange.Month)">
+                        This Month
+                    </button>
+                </div>
+            </div>
+
+            @foreach (var wordListOverview in privateWordListOverviews)
+            {
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="card-title text-xl">@wordListOverview.Title</h3>
+                                <p class="text-sm text-gray-500">
+                                    Created @wordListOverview.CreatedDate.ToShortDateString()
+                                    @if (wordListOverview.LastModifiedDate > new DateTime(1, 1, 1))
+                                    {
+                                        <text> • Last edited @wordListOverview.LastModifiedDate.ToShortDateString()</text>
+                                    }
+                                </p>
+                            </div>
+
+                            @if (!viewingOtherProfile)
+                            {
+                                <div class="flex items-center gap-2">
+                                    <div class="badge badge-outline">Category here?</div>
+                                    <button @onclick="@(e => NavigateToUri($"/Edit/{wordListOverview.Guid}?ispublic={wordListOverview.IsPublic.ToString().ToLower()}"))" class="btn btn-ghost btn-xs" title="Edit">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />
+                                        </svg>
+                                    </button>
+                                    <button @onclick="@(() => ShowDeleteConfirmationModal(wordListOverview))" class="btn btn-ghost btn-xs" title="Delete">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 6h18" />
+                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+
+                        <p class="my-2">@wordListOverview.Description</p>
+
+                        <!-- Word Sample Preview -->
+                        <div class="bg-base-200 p-3 rounded-box my-2">
+                            <h4 class="font-semibold mb-1">Sample Words:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                @if (wordListOverview.WordSample != null)
+                                {
+                                    @foreach (var word in wordListOverview.WordSample.Take(5))
+                                    {
+                                        <div class="badge badge-secondary">@word.Key</div>
+                                    }
+                                    @if (wordListOverview.WordSample.Count > 5)
+                                    {
+                                        <div class="badge badge-ghost">+@(wordListOverview.WordSample.Count - 5) more</div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Tags, Stats and Actions -->
+                        <div class="flex flex-wrap items-center gap-2 mt-2">
+                            @if (wordListOverview.Tags != null)
+                            {
+                                @foreach (var tag in wordListOverview.Tags)
+                                {
+                                    <div class="badge badge-primary">@tag</div>
+                                }
+                            }
+                        </div>
+
+                        <div class="card-actions justify-between items-center mt-4">
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center gap-1">
+                                    <i title="Upvote">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M7 10v12" />
+                                            <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z" />
+                                        </svg>
+                                    </i>
+                                    <span>@wordListOverview.Upvotes</span>
+                                </div>
+@*                                 <div class="flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                        <circle cx="9" cy="7" r="4" />
+                                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                    </svg>
+                                    <span>Put player count here?</span>
+                                </div> *@
+                            </div>
+                            <a href="/Game/@wordListOverview.WordListGuid?ispublic=@wordListOverview.IsPublic.ToString().ToLower()"
+                            class="btn btn-primary">Play</a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (hasMorePrivateWordLists)
+            {
+                <div class="text-center mt-4">
+                    <button @onclick="LoadMorePrivateWordLists" class="btn btn-outline btn-primary" disabled="@loadingMorePrivate">
+                        @if (loadingMorePrivate)
+                        {
+                            <span class="loading loading-spinner"></span>
+                            <span>Loading...</span>
+                        }
+                        else
+                        {
+                            <span>Load More</span>
+                        }
+                    </button>
+                </div>
+            }
+        }
+        else if (!viewingOtherProfile)
+        {
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="card-title text-xl">No private word lists</h3>
+                            <p class="text-sm text-gray-500">Private word lists that you create will appear here.</p>
+                        </div>
+                    </div>
+                    <div class="card-actions justify-end">
+                        @if (UserState.IsAuthenticated == true)
+                        {
+                            <a href="/Create" class="btn btn-primary">Create New List</a>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary" onclick="document.getElementById('login-modal').showModal()">Create New List</button>
+
+                            <dialog id="login-modal" class="modal">
+                                <div class="modal-box">
+                                    <h3 class="font-bold text-lg">Login Required</h3>
+                                    <p class="py-4">You need to be logged in to create a word list.</p>
+                                    <div class="modal-action">
+                                        <form method="dialog">
+                                            <a href="authentication/login" class="btn btn-primary">Login</a>
+                                            <button class="btn">Cancel</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </dialog>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Public Word Lists Feed -->
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold mb-6 mt-16">Public Word Lists</h2>
+
+        <div class="join">
+            <button class="join-item btn @(selectedPublicDateRange == null ? "btn-primary" : "")"
+                    @onclick="() => FilterPublicByDateRange(null)">
+                All Time
+            </button>
+            <button class="join-item btn @(selectedPublicDateRange == DateRange.Today ? "btn-primary" : "")"
+                    @onclick="() => FilterPublicByDateRange(DateRange.Today)">
+                Today
+            </button>
+            <button class="join-item btn @(selectedPublicDateRange == DateRange.Week ? "btn-primary" : "")"
+                    @onclick="() => FilterPublicByDateRange(DateRange.Week)">
+                This Week
+            </button>
+            <button class="join-item btn @(selectedPublicDateRange == DateRange.Month ? "btn-primary" : "")"
+                    @onclick="() => FilterPublicByDateRange(DateRange.Month)">
+                This Month
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6">
+        @if (publicWordListOverviews?.Count > 0)
+        {
+            @foreach (var wordListOverview in publicWordListOverviews)
+            {
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="card-title text-xl">@wordListOverview.Title</h3>
+                                <p class="text-sm text-gray-500">@wordListOverview.CreatedDate.ToShortDateString()</p>
+                            </div>
+
+                            @if (!viewingOtherProfile)
+                            {
+                                <div class="flex items-center gap-2">
+                                    <div class="badge badge-outline">Category here?</div>
+                                    <button @onclick="@(e => NavigateToUri($"/Edit/{wordListOverview.Guid}?ispublic={wordListOverview.IsPublic.ToString().ToLower()}"))" class="btn btn-ghost btn-xs" title="Edit">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />
+                                        </svg>
+                                    </button>
+                                    <button @onclick="@(() => ShowDeleteConfirmationModal(wordListOverview))" class="btn btn-ghost btn-xs" title="Delete">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 6h18" />
+                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+
+                        <p class="my-2">@wordListOverview.Description</p>
+
+                        <!-- Word Sample Preview -->
+                        <div class="bg-base-200 p-3 rounded-box my-2">
+                            <h4 class="font-semibold mb-1">Sample Words:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                @if (wordListOverview.WordSample != null)
+                                {
+                                    @foreach (var word in wordListOverview.WordSample.Take(5))
+                                    {
+                                        <div class="badge badge-secondary">@word.Key</div>
+                                    }
+                                    @if (wordListOverview.WordSample.Count > 5)
+                                    {
+                                        <div class="badge badge-ghost">+@(wordListOverview.WordSample.Count - 5) more</div>
+                                    }
+                                }
+
+                            </div>
+                        </div>
+
+                        <!-- Tags, Stats and Actions -->
+                        <div class="flex flex-wrap items-center gap-2 mt-2">
+                            @if (wordListOverview.Tags != null)
+                            {
+                                @foreach (var tag in wordListOverview.Tags)
+                                {
+                                    <div class="badge badge-primary">@tag</div>
+                                }
+                            }
+                        </div>
+
+                        <div class="card-actions justify-between items-center mt-4">
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center gap-1">
+                                    <i title="Upvote">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M7 10v12" />
+                                            <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z" />
+                                        </svg>
+                                    </i>
+                                    <span>@wordListOverview.Upvotes</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                        <circle cx="9" cy="7" r="4" />
+                                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                    </svg>
+                                    <span>Put player count here?</span>
+                                </div>
+                            </div>
+                            <a href="/Game/@wordListOverview.WordListGuid?ispublic=@wordListOverview.IsPublic.ToString().ToLower()" class="btn btn-primary">Play</a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (hasMorePublicWordLists)
+            {
+                <div class="text-center mt-4">
+                    <button @onclick="LoadMorePublicWordLists" class="btn btn-outline btn-primary" disabled="@loadingMorePublic">
+                        @if (loadingMorePublic)
+                        {
+                            <span class="loading loading-spinner"></span>
+                            <span>Loading...</span>
+                        }
+                        else
+                        {
+                            <span>Load More</span>
+                        }
+                    </button>
+                </div>
+            }
+        }
+        else if (!viewingOtherProfile)
+        {
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="card-title text-xl">No public word lists</h3>
+                            <p class="text-sm text-gray-500">Public word lists that you create will appear here.</p>
+                        </div>
+                    </div>
+
+                    <div class="card-actions justify-end">
+                        @if (UserState.IsAuthenticated == true)
+                        {
+                            <a href="/Create" class="btn btn-primary">Create New List</a>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary" onclick="document.getElementById('login-modal').showModal()">Create New List</button>
+
+                            <dialog id="login-modal" class="modal">
+                                <div class="modal-box">
+                                    <h3 class="font-bold text-lg">Login Required</h3>
+                                    <p class="py-4">You need to be logged in to create a word list.</p>
+                                    <div class="modal-action">
+                                        <form method="dialog">
+                                            <a href="authentication/login" class="btn btn-primary">Login</a>
+                                            <button class="btn">Cancel</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </dialog>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code
+{
+    [Parameter]
+    public required string guid { get; set; }
+    private List<WordListOverview>? privateWordListOverviews;
+    private List<WordListOverview>? publicWordListOverviews;
+    private NotificationServiceHelper? notificationServiceHelper;
+    private WordListOverview? toBeDeleted;
+    private string openConfirmDeleteModal => ClickedDelete ? "modal-open" : "";
+    private bool viewingOtherProfile;
+    private bool ClickedDelete { get; set; }
+    private bool ShowToast { get; set; }
+    private string? ToastMessage;
+    private string? ToastClass { get; set; }
+
+    // Date range filtering
+    private DateRange? selectedPrivateDateRange = null;
+    private DateRange? selectedPublicDateRange = null;
+
+    // Pagination variables
+    private const int PageSize = 5;
+    private int privatePageNumber = 1;
+    private int publicPageNumber = 1;
+    private bool hasMorePrivateWordLists = false;
+    private bool hasMorePublicWordLists = false;
+    private bool loadingMorePrivate = false;
+    private bool loadingMorePublic = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        notificationServiceHelper = new NotificationServiceHelper();
+        notificationServiceHelper.OnShowNotification += HandleShowNotification;
+        notificationServiceHelper.OnClearNotification += HandleClearNotification;
+
+        await LoadInitialData();
+    }
+
+    private async Task LoadInitialData()
+    {
+        // Reset pagination variables
+        privatePageNumber = 1;
+        publicPageNumber = 1;
+
+        if (UserState.IsAuthenticated == true)
+        {
+            if (UserState.UserId != null)
+            {
+                if (UserState.UserId == guid)
+                {
+                    await LoadPrivateWordLists(true);
+                }
+                else if (UserState.UserId != guid)
+                {
+                    viewingOtherProfile = true;
+                }
+            }
+        }
+        else if (UserState.IsAuthenticated == false)
+        {
+            viewingOtherProfile = true;
+        }
+
+        await LoadPublicWordLists(true);
+    }
+
+    private async Task LoadPrivateWordLists(bool isInitialLoad = false)
+    {
+        if (isInitialLoad)
+        {
+            privatePageNumber = 1;
+        }
+
+        try
+        {
+            var result = await MorphemeApi.GetPrivateWordListOverviewsAsync(
+                userId: guid,
+                pageNumber: privatePageNumber,
+                pageSize: PageSize,
+                dateRange: selectedPrivateDateRange);
+
+            if (isInitialLoad || privateWordListOverviews == null)
+            {
+                privateWordListOverviews = result;
+            }
+            else
+            {
+                privateWordListOverviews.AddRange(result);
+            }
+
+            // Check if there might be more items
+            hasMorePrivateWordLists = result.Count == PageSize;
+        }
+        catch
+        {
+            notificationServiceHelper?.ShowError($"Failed to retrieve private word lists. Please refresh to try again.");
+        }
+    }
+
+    private async Task LoadPublicWordLists(bool isInitialLoad = false)
+    {
+        if (isInitialLoad)
+        {
+            publicPageNumber = 1;
+        }
+
+        try
+        {
+            var result = await MorphemeApi.GetWordListOverviewsAsync(
+                userId: guid,
+                pageNumber: publicPageNumber,
+                pageSize: PageSize,
+                dateRange: selectedPublicDateRange);
+
+            if (isInitialLoad || publicWordListOverviews == null)
+            {
+                publicWordListOverviews = result;
+            }
+            else
+            {
+                publicWordListOverviews.AddRange(result);
+            }
+
+            // Check if there might be more items
+            hasMorePublicWordLists = result.Count == PageSize;
+        }
+        catch
+        {
+            notificationServiceHelper?.ShowError($"Failed to retrieve public word lists. Please refresh to try again.");
+        }
+    }
+
+    private async Task LoadMorePrivateWordLists()
+    {
+        if (loadingMorePrivate) return;
+
+        loadingMorePrivate = true;
+        privatePageNumber++;
+
+        try
+        {
+            await LoadPrivateWordLists();
+        }
+        catch
+        {
+            notificationServiceHelper?.ShowError($"Failed to load more private word lists. Please refresh to try again.");
+            privatePageNumber--; // Revert the page number increment
+        }
+        finally
+        {
+            loadingMorePrivate = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadMorePublicWordLists()
+    {
+        if (loadingMorePublic) return;
+
+        loadingMorePublic = true;
+        publicPageNumber++;
+
+        try
+        {
+            await LoadPublicWordLists();
+        }
+        catch
+        {
+            notificationServiceHelper?.ShowError($"Failed to load more public word lists. Please try again.");
+            publicPageNumber--; // Revert the page number increment
+        }
+        finally
+        {
+            loadingMorePublic = false;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleShowNotification(string message, NotificationServiceHelper.NotificationType type)
+    {
+        ToastMessage = message;
+        ToastClass = type switch
+        {
+            NotificationServiceHelper.NotificationType.Success => "alert alert-success",
+            NotificationServiceHelper.NotificationType.Error => "alert alert-error",
+            NotificationServiceHelper.NotificationType.Warning => "alert alert-warning",
+            NotificationServiceHelper.NotificationType.Info => "alert alert-info",
+            _ => "alert"
+        };
+        ShowToast = true;
+        StateHasChanged();
+    }
+
+    private void HandleClearNotification()
+    {
+        ClearToast();
+    }
+
+    private void ClearToast()
+    {
+        ShowToast = false;
+        ToastMessage = string.Empty;
+        ToastClass = string.Empty;
+        StateHasChanged();
+    }
+
+    private void NavigateToUri(string uri)
+    {
+        _navigationManager.NavigateTo(uri, forceLoad: true);
+    }
+
+    public void Dispose()
+    {
+        if (notificationServiceHelper != null)
+        {
+            notificationServiceHelper.OnShowNotification -= HandleShowNotification;
+            notificationServiceHelper.OnClearNotification -= HandleClearNotification;
+        }
+    }
+
+    private async Task DeleteWordListOverviewAsync()
+    {
+        if (toBeDeleted != null && UserState.UserId != null)
+        {
+            try
+            {
+                var wordListOverviewDeleteResponse = await MorphemeApi.DeleteWordListOverviewAsync(toBeDeleted.Guid, Guid.Parse(UserState.UserId));
+                if (!wordListOverviewDeleteResponse.IsSuccessStatusCode)
+                {
+                    @*                      _logger.LogError($"Failed to delete word list. Status code: {wordListOverviewDeleteResponse.StatusCode}");
+*@
+                    notificationServiceHelper?.ShowError($"Failed to delete word list: {wordListOverviewDeleteResponse.StatusCode}");
+                    return;
+                }
+
+                CloseModal();
+                notificationServiceHelper?.ShowSuccess("Word list deleted successfully!");
+                await Task.Delay(1000);
+                _navigationManager.NavigateTo($"/Profile/{UserState.UserId}", forceLoad: true);
+            }
+            catch (Exception 
+    @* ex *@)
+            {
+                notificationServiceHelper?.ShowError("An unexpected error occurred. Please try again shortly.");
+                @*              _logger.LogError(ex, "Unexpected error during word list save");
+*@              }
+        }
+    }
+
+    private async Task FilterPrivateByDateRange(DateRange? dateRange)
+    {
+        selectedPrivateDateRange = dateRange;
+        privatePageNumber = 1; // Reset to first page
+        await LoadPrivateWordLists(true);
+    }
+
+    private async Task FilterPublicByDateRange(DateRange? dateRange)
+    {
+        selectedPublicDateRange = dateRange;
+        publicPageNumber = 1; // Reset to first page
+        await LoadPublicWordLists(true);
+    }
+
+    private void ShowDeleteConfirmationModal(WordListOverview wLO_ToBeDeleted)
+    {
+        ClickedDelete = true;
+        toBeDeleted = wLO_ToBeDeleted;
+    }
+
+    private void CloseModal()
+    {
+        ClickedDelete = false;
+        toBeDeleted = null;
+    }
+}

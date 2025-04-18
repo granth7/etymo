@@ -74,7 +74,7 @@ public class PostgresServiceTests : IAsyncLifetime
         // Act
         await _postgresService.InsertWordListAsync(wordList);
         await _postgresService.InsertWordListOverviewAsync(wordListOverview);
-        var result = await _postgresService.SelectWordListOverviewsByUserIdAsync(wordListOverview.CreatorGuid);
+        var result = await _postgresService.SelectPublicWordListOverviewsAsync(wordListOverview.CreatorGuid);
 
         // Assert
         Assert.NotNull(result);
@@ -94,7 +94,7 @@ public class PostgresServiceTests : IAsyncLifetime
         await _postgresService.InsertWordListOverviewAsync(wordListOverview);
 
         // Act
-        var response = await _postgresService.DeleteWordListOverviewByGuidAsync(wordListOverview.Guid);
+        var response = await _postgresService.DeleteWordListOverviewByGuidAsync(wordListOverview.Guid, wordListOverview.CreatorGuid);
 
         // Assert
         Assert.True(response);

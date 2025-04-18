@@ -1,33 +1,29 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
+﻿@using System.IdentityModel.Tokens.Jwt
 @using System.Security.Claims;
-@using System.Security.Principal;
 @using System.Security.Cryptography
+@using System.Security.Principal;
 @using System.Text
-@using System.IdentityModel.Tokens.Jwt
+@using Microsoft.AspNetCore.Components.Authorization
+@using etymo.Web.Components.Services
+@inject UserStateService UserState
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <AuthorizeView>
     <Authorized>
-@*         <div>
-            <span>Welcome @context.User.Identity?.Name!</span>
-            <form method="post" action="authentication/logout" style="display:inline;">
-                <AntiforgeryToken />
-                <button type="submit" class="btn btn-link">Logout</button>
-            </form>
-        </div> *@
         <div class="dropdown dropdown-end">
             <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
                 <div class="w-10 rounded-full">
-                    <img alt="Tailwind CSS Navbar component"
-                         src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
+                    <img alt="User Avatar"
+                         src="@AvatarUrl" />
                 </div>
             </div>
             <ul tabindex="0"
                 class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
                 <li>
-                    <a class="justify-between">
+                    <a href="/Profile/@UserState.UserId" class="justify-between btn">
                         Profile
-                        <span class="badge">New</span>
-                    </a>
+                        @*                         <span class="badge">New</span>
+ *@                    </a>
                 </li>
                 <li><a>Settings</a></li>
                 <li>
@@ -43,3 +39,43 @@
         <a href="authentication/login" class="btn btn-primary">Login</a>
     </NotAuthorized>
 </AuthorizeView>
+
+@code {
+    [CascadingParameter]
+    private string? UserGuid { get; set; }
+
+    private string AvatarUrl { get; set; } = "https://api.dicebear.com/9.x/thumbs/svg?seed=fallback";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAvatarUrl();
+    }
+
+    private async Task GetAvatarUrl()
+    {
+        // Get the authentication state
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated != true)
+        {
+            return;
+        }
+
+        // Try to get Google avatar if available
+        var googlePictureClaim = user.FindFirst("picture") ?? user.FindFirst("avatar_url");
+        if (googlePictureClaim != null && !string.IsNullOrEmpty(googlePictureClaim.Value))
+        {
+            AvatarUrl = googlePictureClaim.Value;
+            return;
+        }
+
+        // Generate a unique avatar based on user ID if no Google picture
+        var userId = UserState.UserId ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            // Use DiceBear API to generate a unique avatar based on user ID
+            AvatarUrl = $"https://api.dicebear.com/9.x/thumbs/svg?seed={userId}";
+        }
+    }
+}

@@ -4,6 +4,7 @@ using etymo.ApiService.Postgres;
 using etymo.Tests.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
+using Shared.Models;
 
 namespace etymo.Tests.Tests;
 
@@ -41,7 +42,7 @@ public class PostgresControllerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetWordListOverviewsByUserIdAsync_ReturnsWordListOverviews()
+    public async Task GetPublicWordListOverviewsAsync_ReturnsWordListOverviews()
     {
         // Arrange
         var wordList = TestDataHelper.CreateWordList(creatorGuid: _userGuid);
@@ -52,7 +53,26 @@ public class PostgresControllerTests : IAsyncLifetime
         await _postgresService.InsertWordListOverviewAsync(wordListOverview);
 
         // Act
-        var response = await _postgresController.GetWordListOverviewsByUserIdAsync(wordListOverview.CreatorGuid);
+        var response = await _postgresController.GetWordListOverviewsAsync(wordListOverview.CreatorGuid);
+
+        // Assert
+        var actionResult = Assert.IsType<OkObjectResult>(response);
+        Assert.NotNull(actionResult.Value);
+    }
+
+    [Fact]
+    public async Task GetPrivateWordListOverviewsAsync_ReturnsWordListOverviews()
+    {
+        // Arrange
+        var wordList = TestDataHelper.CreateWordList(creatorGuid: _userGuid);
+        var wordListOverview = TestDataHelper.CreateWordListOverview(creatorGuid: _userGuid, wordListGuid: wordList.Guid, isPublic: false);
+
+        // Seed test data
+        await _postgresService.InsertWordListAsync(wordList);
+        await _postgresService.InsertWordListOverviewAsync(wordListOverview);
+
+        // Act
+        var response = await _postgresController.GetPrivateWordListOverviewsAsync(wordListOverview.CreatorGuid);
 
         // Assert
         var actionResult = Assert.IsType<OkObjectResult>(response);
@@ -104,7 +124,7 @@ public class PostgresControllerTests : IAsyncLifetime
         await _postgresService.InsertWordListOverviewAsync(wordListOverview);
 
         // Act
-        var response = await _postgresController.DeleteWordListOverviewAsync(wordListOverview.Guid);
+        var response = await _postgresController.DeleteWordListOverviewAsync(wordListOverview.Guid, wordListOverview.CreatorGuid);
 
         // Assert
         var actionResult = Assert.IsType<NoContentResult>(response);
@@ -115,10 +135,16 @@ public class PostgresControllerTests : IAsyncLifetime
     public async Task DeleteWordListOverviewAsync_ReturnsNotFound_WhenItemDoesNotExist()
     {
         // Arrange
-        var guid = Guid.NewGuid();
+        var wordList = TestDataHelper.CreateWordList(creatorGuid: _userGuid);
+        var wordListOverview = TestDataHelper.CreateWordListOverview(wordListGuid: wordList.Guid);
 
-        // Act
-        var response = await _postgresController.DeleteWordListOverviewAsync(guid);
+        // Seed test data
+        await _postgresService.InsertWordListAsync(wordList);
+        await _postgresService.InsertWordListOverviewAsync(wordListOverview);
+
+        // Act - Delete the item, then try to delete it again
+        await _postgresController.DeleteWordListOverviewAsync(wordListOverview.Guid, wordListOverview.CreatorGuid);
+        var response = await _postgresController.DeleteWordListOverviewAsync(wordListOverview.Guid, wordListOverview.CreatorGuid);
 
         // Assert
         var actionResult = Assert.IsType<NotFoundResult>(response);

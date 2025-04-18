@@ -1,0 +1,68 @@
+﻿@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+@code {
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<Heartbeat>? _jsRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsRef = DotNetObjectReference.Create(this);
+
+            // Load the module with our JS code
+            _module = await JSRuntime.InvokeAsync<IJSObjectReference>(
+                "import", "./js/heartbeat.js");
+
+            // Start the heartbeat
+            await _module.InvokeVoidAsync("startHeartbeat", 300000); // 5 minutes
+
+            // Make an immediate call
+            await TriggerHeartbeat();
+        }
+    }
+
+    [JSInvokable]
+    public async Task TriggerHeartbeat()
+    {
+        try
+        {
+            using var client = new HttpClient();
+            var response = await client.GetAsync($"{GetBaseUrl()}/api/heartbeat");
+
+            // Log the response for debugging
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Heartbeat success: {content}");
+            }
+            else
+            {
+                Console.WriteLine($"Heartbeat failed: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Heartbeat exception: {ex.Message}");
+        }
+    }
+
+    private string GetBaseUrl()
+    {
+        // This assumes the app is not in a virtual directory
+        return "";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Clean up resources
+        if (_module != null)
+        {
+            await _module.InvokeVoidAsync("stopHeartbeat");
+            await _module.DisposeAsync();
+        }
+
+        _jsRef?.Dispose();
+    }
+}

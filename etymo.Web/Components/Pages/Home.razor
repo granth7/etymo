@@ -1,64 +1,414 @@
-﻿@page "/Home"
+﻿@page "/"
 
 @using Microsoft.AspNetCore.Components.Authorization
+@using etymo.Web.Components.Services
 @attribute [StreamRendering(true)]
 @attribute [OutputCache(Duration = 5)]
-@rendermode InteractiveServer
-@inject MorphemeApiClient MorphemeApi
-@inject NavigationManager _navigationManager
-@inject AuthenticationStateProvider AuthenticationStateProvider
 
+@inject MorphemeApiClient MorphemeApi
+@inject UserStateService UserState
+
+@using Shared.Models
 @using etymo.Web.Components.Extensions
+@using etymo.Web.Components.Helpers
 @using System.Security.Claims
 
 <PageTitle>Etymo</PageTitle>
 
-<h1>Word Lists</h1>
+@* Display error or success toast *@
+@if (ShowToast)
+{
+    <div class="toast toast-bottom toast-end z-50">
+        <div class="@ToastClass">
+            <span>@ToastMessage</span>
+            <button class="btn btn-ghost btn-xs" @onclick="ClearToast">Close</button>
+        </div>
+    </div>
+}
 
-<p>This component demonstrates showing data loaded from a backend API service.</p>
+<div class="container mx-auto px-4 py-8">
+    <!-- Create New Word List Section -->
+    <div class="card bg-base-100 shadow-xl mb-8">
+        <div class="card-body">
+            <h2 class="card-title text-2xl font-bold">Create a word list</h2>
+            <p class="mb-4">Create a private word list, or share it with the community! You can add up to 100 words with definitions.</p>
+            <div class="card-actions justify-end">
+                @if (@UserState.IsAuthenticated == true)
+                {
+                    <a href="/Create" class="btn btn-primary">Create New List</a>
+                }
+                else
+                {
+                    <button class="btn btn-primary" onclick="document.getElementById('login-modal').showModal()">Create New List</button>
+
+                    <dialog id="login-modal" class="modal">
+                        <div class="modal-box">
+                            <h3 class="font-bold text-lg">Login Required</h3>
+                            <p class="py-4">You need to be logged in to create a word list.</p>
+                            <div class="modal-action">
+                                <form method="dialog">
+                                    <a href="authentication/login" class="btn btn-primary">Login</a>
+                                    <button class="btn">Cancel</button>
+                                </form>
+                            </div>
+                        </div>
+                    </dialog>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- View Private Word Lists Section -->
+    <div class="card bg-base-100 shadow-xl mb-8">
+        <div class="card-body">
+            <h2 class="card-title text-2xl font-bold">Where's my stuff?</h2>
+            <p class="mb-4">Don't want to see other lists? Tap 'Go to profile' to see the lists you created. Login required.</p>
+            <div class="card-actions justify-end">
+                @if (@UserState.IsAuthenticated == true)
+                {
+                    <a href="/Profile/@UserState.UserId" class="btn btn-primary">Go to profile</a>
+                }
+                else
+                {
+                    <button class="btn btn-primary" onclick="document.getElementById('login-modal-2').showModal()">Go to profile</button>
+
+                    <dialog id="login-modal-2" class="modal">
+                        <div class="modal-box">
+                            <h3 class="font-bold text-lg">Login Required</h3>
+                            <p class="py-4">You need to be logged in to view your profile.</p>
+                            <div class="modal-action">
+                                <form method="dialog">
+                                    <a href="authentication/login" class="btn btn-primary">Login</a>
+                                    <button class="btn">Cancel</button>
+                                </form>
+                            </div>
+                        </div>
+                    </dialog>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Popular Word Lists Feed -->
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Popular Word Lists</h2>
+
+        <!-- Date Range Filter -->
+        <div class="join">
+            <button class="join-item btn @(selectedDateRange == null ? "btn-primary" : "")"
+                    @onclick="() => FilterByDateRange(null)">
+                All Time
+            </button>
+            <button class="join-item btn @(selectedDateRange == DateRange.Today ? "btn-primary" : "")"
+                    @onclick="() => FilterByDateRange(DateRange.Today)">
+                Today
+            </button>
+            <button class="join-item btn @(selectedDateRange == DateRange.Week ? "btn-primary" : "")"
+                    @onclick="() => FilterByDateRange(DateRange.Week)">
+                This Week
+            </button>
+            <button class="join-item btn @(selectedDateRange == DateRange.Month ? "btn-primary" : "")"
+                    @onclick="() => FilterByDateRange(DateRange.Month)">
+                This Month
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6">
+        @if (popularWordListOverviews != null && popularWordListOverviews.Any())
+        {
+            @foreach (var wordListOverview in popularWordListOverviews)
+            {
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="card-title text-xl">@wordListOverview.Title</h3>
+                                <p class="text-sm text-gray-500">@wordListOverview.CreatedDate.ToShortDateString()</p>
+                            </div>
+                            <div class="badge badge-outline">Category here?</div>
+                        </div>
+
+                        <p class="my-2">@wordListOverview.Description</p>
+
+                        <!-- Word Sample Preview -->
+                        <div class="bg-base-200 p-3 rounded-box my-2">
+                            <h4 class="font-semibold mb-1">Sample Words:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                @if (wordListOverview.WordSample != null)
+                                {
+                                    @foreach (var word in wordListOverview.WordSample.Take(5))
+                                    {
+                                        <div class="badge badge-secondary">@word.Key</div>
+                                    }
+                                    @if (wordListOverview.WordSample.Count > 5)
+                                    {
+                                        <div class="badge badge-ghost">+@(wordListOverview.WordSample.Count - 5) more</div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Tags, Stats and Actions -->
+                        <div class="flex flex-wrap items-center gap-2 mt-2">
+                            @if (wordListOverview.Tags != null)
+                            {
+                                @foreach (var tag in wordListOverview.Tags)
+                                {
+                                    <div class="badge badge-primary">@tag</div>
+                                }
+                            }
+                        </div>
+
+                        <div class="flex items-center justify-between w-full">
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center gap-1">
+                                    @if (@UserState.IsAuthenticated == true)
+                                    {
+                                        <button @onclick="() => ToggleUpvoteAsync(wordListOverview.Guid)"
+                                                class="flex items-center gap-1 hover:text-primary transition-colors"
+                                                disabled="@(!UserState.IsAuthenticated)">
+                                            @if (wordListOverview.UserHasUpvoted)
+                                            {
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#AD83EC" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M7 10v12" />
+                                                    <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z" />
+                                                </svg>
+                                            }
+                                            else
+                                            {
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M7 10v12" />
+                                                    <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z" />
+                                                </svg>
+                                            }
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="flex items-center gap-1 hover:text-primary transition-colors" onclick="document.getElementById('login-modal-3').showModal()">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M7 10v12" />
+                                                <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z" />
+                                            </svg>
+                                        </button>
+
+                                        <dialog id="login-modal-3" class="modal">
+                                            <div class="modal-box">
+                                                <h3 class="font-bold text-lg">Login Required</h3>
+                                                <p class="py-4">You need to be logged in to upvote.</p>
+                                                <div class="modal-action">
+                                                    <form method="dialog">
+                                                        <a href="authentication/login" class="btn btn-primary">Login</a>
+                                                        <button class="btn">Cancel</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </dialog>
+                                    }
+                                    <span>@wordListOverview.Upvotes</span>
+                                </div>
+                            </div>
+
+                            <a href="/Game/@wordListOverview.WordListGuid?ispublic=@wordListOverview.IsPublic.ToString().ToLower()"
+                               class="btn btn-primary">Play</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else if (isLoading)
+        {
+            <div class="flex justify-center items-center py-8">
+                <span class="loading loading-spinner loading-lg text-primary"></span>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>No word lists found for the selected filter. Try another time period or create your own list!</span>
+            </div>
+        }
+    </div>
+
+    @if (hasMoreLists)
+    {
+        <div class="flex justify-center mt-8">
+            <button class="btn btn-outline" @onclick="LoadMoreLists">Load More</button>
+        </div>
+    }
+</div>
 
 <AuthorizeView>
     <Authorized>
-        <p>You are logged in!</p>
-
         @code
         {
-            [CascadingParameter]
-            private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+        private List<WordListOverview>? popularWordListOverviews;
+        private NotificationServiceHelper? notificationServiceHelper;
+        private bool ShowToast { get; set; }
+        private string? ToastMessage;
+        private string? ToastClass { get; set; }
 
-            private string? UserName;
-            private string? UserId;
+        // New state variables for date range filtering
+        private DateRange? selectedDateRange = null;
+        private bool isLoading = false;
+        private int currentPage = 1;
+        private const int pageSize = 10;
+        private bool hasMoreLists = false;
 
-            protected override async Task OnInitializedAsync()
+        protected override async Task OnInitializedAsync()
+        {
+            notificationServiceHelper = new NotificationServiceHelper();
+            notificationServiceHelper.OnShowNotification += HandleShowNotification;
+            notificationServiceHelper.OnClearNotification += HandleClearNotification;
+
+            await LoadWordListsAsync();
+        }
+
+        private async Task LoadWordListsAsync(bool resetPage = true)
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            if (resetPage)
             {
-                if (AuthenticationStateTask != null)
+                currentPage = 1;
+            }
+
+            try
+            {
+                popularWordListOverviews = await MorphemeApi.GetWordListOverviewsAsync(
+                dateRange: selectedDateRange,
+                pageNumber: currentPage,
+                pageSize: pageSize);
+
+                // If we got exactly pageSize items, there might be more
+                hasMoreLists = popularWordListOverviews.Count == pageSize;
+            }
+            catch (Exception ex)
+            {
+                notificationServiceHelper?.ShowError($"Failed to retrieve word lists. Please try again shortly.");
+                Console.WriteLine($"Error loading word lists: {ex.Message}");
+            }
+            finally
+            {
+                isLoading = false;
+                StateHasChanged();
+            }
+        }
+
+        private async Task FilterByDateRange(DateRange? dateRange)
+        {
+            selectedDateRange = dateRange;
+            await LoadWordListsAsync();
+        }
+
+        private async Task LoadMoreLists()
+        {
+            currentPage++;
+            isLoading = true;
+            StateHasChanged();
+
+            try
+            {
+                var nextPageLists = await MorphemeApi.GetWordListOverviewsAsync(
+                dateRange: selectedDateRange,
+                pageNumber: currentPage,
+                pageSize: pageSize);
+
+                if (nextPageLists.Any())
                 {
-                    var authState = await AuthenticationStateTask;
-                    var user = authState.User;
-
-                    UserName = user.Identity?.Name;
-
-                    // Extract the user's unique ID (sub claim)
-                    UserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                        ?? user.FindFirst("sub")?.Value;
-
-                    var wordList =  new Shared.Models.WordList
-                        {
-                            Guid = Guid.NewGuid(),
-                            CreatorGuid = new Guid($"{UserId}"),
-                            Words = new Dictionary<string, string>
-                            {
-                                { "word1", "definition1" },
-                                { "word2", "definition2" }
-                            }
-                        };
-
-                    //var response = await MorphemeApi.CreateWordList(wordList);
+                    popularWordListOverviews!.AddRange(nextPageLists);
+                    // If we got exactly pageSize items, there might be more
+                    hasMoreLists = nextPageLists.Count == pageSize;
+                }
+                else
+                {
+                    hasMoreLists = false;
                 }
             }
+            catch
+            {
+                notificationServiceHelper?.ShowError($"Failed to load more lists. Please try again shortly.");
+                currentPage--; // Revert page number on failure
+            }
+            finally
+            {
+                isLoading = false;
+                StateHasChanged();
+            }
+        }
+
+        private async Task ToggleUpvoteAsync(Guid wordListOverviewId)
+        {
+            if (!UserState.IsAuthenticated)
+            {
+                return;
+            }
+
+            try
+            {
+                var result = await MorphemeApi.ToggleUpvoteAsync(wordListOverviewId);
+
+                // Update the UI to reflect the new state
+                var wordList = popularWordListOverviews?.FirstOrDefault(wl => wl.Guid == wordListOverviewId);
+                if (wordList != null)
+                {
+                    wordList.UserHasUpvoted = result.IsUpvoted;
+                    wordList.Upvotes = result.UpvoteCount;
+                }
+
+                // Show success message - uncomment for debugging.
+                //notificationServiceHelper?.ShowSuccess("Upvote updated successfully!");
+            }
+            catch (Exception ex)
+            {
+                // Show error message
+                notificationServiceHelper?.ShowError($"Failed to update upvote. {ex.Message}");
+            }
+        }
+
+        private void HandleShowNotification(string message, NotificationServiceHelper.NotificationType type)
+        {
+            ToastMessage = message;
+            ToastClass = type switch
+            {
+                NotificationServiceHelper.NotificationType.Success => "alert alert-success",
+                NotificationServiceHelper.NotificationType.Error => "alert alert-error",
+                NotificationServiceHelper.NotificationType.Warning => "alert alert-warning",
+                NotificationServiceHelper.NotificationType.Info => "alert alert-info",
+                _ => "alert"
+            };
+            ShowToast = true;
+            StateHasChanged();
+        }
+
+        private void HandleClearNotification()
+        {
+            ClearToast();
+        }
+
+        private void ClearToast()
+        {
+            ShowToast = false;
+            ToastMessage = string.Empty;
+            ToastClass = string.Empty;
+            StateHasChanged();
+        }
+
+        public void Dispose()
+        {
+            if (notificationServiceHelper != null)
+            {
+                notificationServiceHelper.OnShowNotification -= HandleShowNotification;
+                notificationServiceHelper.OnClearNotification -= HandleClearNotification;
+            }
+        }
         }
     </Authorized>
     <NotAuthorized>
-        <p><strong>Please <a href="authentication/login">log in</a> to view public word lists.</strong></p>
     </NotAuthorized>
 </AuthorizeView>

@@ -1,0 +1,33 @@
+﻿@inherits LayoutComponentBase
+
+<div class="page">
+    @* <div class="sidebar">
+        <NavMenu />
+    </div> *@
+
+    <main class="py-8">
+        <div class="navbar bg-base-100 fixed top-0 z-50 w-full">
+            <div class="navbar-start px-3">
+                <a href="/" class="icon btn" />
+            </div>
+            <div class="navbar-center">
+                <h2 class="grid-item text-2xl font-bold col-start-2 col-span-5">etymo (testing)</h2>
+            </div>
+            <div class="navbar-end">
+                <LoginDisplay />
+            </div>
+        </div>
+
+        <div class="relative">
+            <article class="mt-16">
+                @Body
+            </article>
+        </div>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>

@@ -1,0 +1,547 @@
+﻿@page "/Edit/{guid}"
+
+@inherits ComponentBase
+
+@attribute [StreamRendering(true)]
+@attribute [OutputCache(Duration = 5)]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Mvc
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Antiforgery
+@using Microsoft.Extensions.Logging
+@using Shared.Models
+@using etymo.Web.Components.Services
+@using etymo.Web.Components.Helpers
+
+@inject NavigationManager _navigationManager
+@inject MorphemeApiClient MorphemeApi
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserStateService UserState
+@inject IAntiforgery Antiforgery
+<div class="container mx-auto p-4 relative">
+
+    @* Display error or success toast *@
+    @if (ShowToast)
+    {
+        <div class="toast toast-bottom toast-end z-50">
+            <div class="@ToastClass">
+                <span>@ToastMessage</span>
+                <button class="btn btn-ghost btn-xs" @onclick="ClearToast">Close</button>
+            </div>
+        </div>
+    }
+
+    <div class="card w-full bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl mb-4">Edit the Word List, then hit 'Update' to save.</h2>
+
+            <EditForm Model="@wordListOverview" method="post" OnValidSubmit="HandleSubmit" class="space-y-4">
+                <input type="hidden" name="Guid" value="@wordListOverview.Guid" />
+
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Title</span>
+                        <span class="label-text-alt @(TitleCharacterCount > TitleMaxLength ? "text-error" : "")">
+                            @TitleCharacterCount/@TitleMaxLength
+                        </span>
+                    </label>
+                    <input type="text" @bind-value="wordListOverview.Title" @bind-value:event="oninput"
+                           maxlength="@TitleMaxLength"
+                           class="input input-bordered w-full @(TitleCharacterCount > TitleMaxLength ? "input-error" : "")"
+                           required
+                           placeholder="Enter a descriptive title for your word list" />
+                    @if (TitleCharacterCount > TitleMaxLength)
+                    {
+                        <label class="label">
+                            <span class="label-text-alt text-error">Title is too long!</span>
+                        </label>
+                    }
+                </div>
+
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Description (Optional)</span>
+                        <span class="label-text-alt @(DescriptionCharacterCount > DescriptionMaxLength ? "text-error" : "")">
+                            @DescriptionCharacterCount/@DescriptionMaxLength
+                        </span>
+                    </label>
+                    <textarea @bind-value="wordListOverview.Description" @bind-value:event="oninput"
+                              maxlength="@DescriptionMaxLength"
+                              class="textarea textarea-bordered h-24 @(DescriptionCharacterCount > DescriptionMaxLength ? "textarea-error" : "")"
+                              placeholder="Provide additional context about your word list"></textarea>
+                    @if (DescriptionCharacterCount > DescriptionMaxLength)
+                    {
+                        <label class="label">
+                            <span class="label-text-alt text-error">Description is too long!</span>
+                        </label>
+                    }
+                </div>
+
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Tags (Optional, Comma Separated)</span>
+                        <span class="label-text-alt @(TagsCharacterCount > TagsMaxLength ? "text-error" : "")">
+                            @TagsCharacterCount/@TagsMaxLength
+                        </span>
+                    </label>
+                    <input type="text" @bind-value="TagInput" @bind-value:event="oninput"
+                           maxlength="@TagsMaxLength"
+                           class="input input-bordered w-full @(TagsCharacterCount > TagsMaxLength ? "input-error" : "")"
+                           placeholder="Enter tags like 'vocabulary, science, biology'" />
+                    @if (TagsCharacterCount > TagsMaxLength)
+                    {
+                        <label class="label">
+                            <span class="label-text-alt text-error">Tags are too long! Maximum @TagsMaxLength characters allowed.</span>
+                        </label>
+                    }
+                </div>
+
+                <div class="form-control">
+                    <label class="label cursor-pointer">
+                        <span class="label-text">Make List Public?</span>
+                        <input type="checkbox" @bind="wordListOverview.IsPublic"
+                        class="checkbox checkbox-primary" />
+                    </label>
+                </div>
+
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Words and Definitions (Need at least 5 pairs. No duplicates.)</span>
+                    </label>
+
+                    <div>
+                        @for (int i = 0; i < wordInputCount; i++)
+                        {
+                            int index = i; // Capture the current index for lambda
+                            <div class="flex gap-2 mb-2">
+                                <input type="text"
+                                @bind-value="wordEntries[index].Word"
+                                @bind-value:event="oninput"
+                                class="input input-bordered flex-1"
+                                placeholder="Word" />
+                                <input type="text"
+                                @bind-value="wordEntries[index].Definition"
+                                @bind-value:event="oninput"
+                                class="input input-bordered flex-1"
+                                placeholder="Definition" />
+                                @if (i >= 5)
+                                {
+                                    <button type="button" @onclick="@(() => RemoveWordEntry(index))" class="btn btn-square btn-outline">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <div class="flex justify-between items-center mt-2">
+                        <button type="button" @onclick="AddWordEntry"
+                        class="btn btn-secondary @(wordInputCount >= 100 ? "btn-disabled" : "")">
+                            Add Another Word
+                        </button>
+                        @if (wordInputCount >= 100)
+                        {
+                            <span class="text-warning">Maximum of 100 words allowed</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="card-actions justify-end mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        Update Word List
+                    </button>
+                    <button type="button" class="btn btn-ghost" @onclick="@(e => NavigateToUri($"/Profile/{UserState.UserId}"))">
+                        Cancel
+                    </button>
+                </div>
+                <AntiforgeryToken />
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<AuthorizeView>
+    <Authorized>
+        @code
+        {
+            public required WordListOverview wordListOverview;
+        public required WordList wordList;
+        private bool ShowToast { get; set; }
+        private string? ToastMessage;
+        private string? ToastClass { get; set; }
+        private NotificationServiceHelper? notificationServiceHelper;
+        private string TagInput { get; set; } = string.Empty;
+        private int wordInputCount = 5; // Default to 5 input forms
+        private int TitleMaxLength => 60;
+        private int DescriptionMaxLength => 180;
+        private int TitleCharacterCount => wordListOverview.Title?.Length ?? 0;
+        private int DescriptionCharacterCount => wordListOverview.Description?.Length ?? 0;
+        private int TagsMaxLength => 60;
+        private int TagsCharacterCount => TagInput?.Length ?? 0;
+
+        // New class to manage word entries
+        public class WordEntry
+        {
+            public string Word { get; set; } = string.Empty;
+            public string Definition { get; set; } = string.Empty;
+        }
+
+        // List to hold word entries
+        private List<WordEntry> wordEntries = new();
+
+        [Parameter]
+        public required string guid { get; set; }
+
+        [Parameter]
+        [SupplyParameterFromQuery]
+        public required bool ispublic { get; set; }
+
+        protected override async Task OnInitializedAsync()
+        {
+            notificationServiceHelper = new NotificationServiceHelper();
+            notificationServiceHelper.OnShowNotification += HandleShowNotification;
+            notificationServiceHelper.OnClearNotification += HandleClearNotification;
+
+            // Initialize word entries
+            InitializeWordEntries();
+
+            await LoadInitialDataAsync();
+
+        }
+
+        private async Task LoadInitialDataAsync()
+        {
+            // Fetch game data based on visibility. Pass in auth info if private.
+            if (UserState.IsAuthenticated == true)
+            {
+                if (UserState.UserId != null)
+                {
+                    // Initialize a new WordList
+                    wordList ??= new WordList
+                    {
+                        Guid = Guid.NewGuid(),
+                        CreatorGuid = Guid.Parse(UserState.UserId),
+                        IsPublic = false,
+                        Words = new Dictionary<string, string>()
+                    };
+
+                    // Initialize a new WordListOverview
+                    wordListOverview ??= new WordListOverview
+                    {
+                        Guid = Guid.NewGuid(),
+                        CreatorGuid = Guid.Parse(UserState.UserId),
+                        WordListGuid = wordList.Guid,
+                        Title = "",
+                        IsPublic = false,
+                        WordSample = new Dictionary<string, string>(),
+                    };
+
+
+                    await FetchWordListDataAsync(guid, ispublic);
+
+                }
+            }
+            else if (UserState.IsAuthenticated == false)
+            {
+                notificationServiceHelper?.ShowError($"You are not authorized, please log in.");
+            }
+        }
+
+        private async Task FetchWordListDataAsync(string guid, bool isPublic)
+        {
+            try
+            {
+                // Choose the appropriate API method based on whether the list is public or private
+                var fetchedWordListOverview = isPublic
+                ? await MorphemeApi.FetchWordListOverviewAsync(wordListOverviewId: Guid.Parse(guid))
+                : await MorphemeApi.FetchPrivateWordListOverviewAsync(wordListOverviewId: Guid.Parse(guid), userId: Guid.Parse(UserState.UserId ?? ""));
+
+                if (fetchedWordListOverview is not null)
+                {
+                    wordListOverview = fetchedWordListOverview;
+                    wordListOverview.LastModifiedDate = DateTime.Now;
+                    TagInput = fetchedWordListOverview.Tags != null ? string.Join(",", fetchedWordListOverview.Tags) : "";
+
+                    // Choose the appropriate API method for fetching the word list
+                    var fetchedWordList = isPublic
+                    ? await MorphemeApi.FetchWordListAsync(fetchedWordListOverview.WordListGuid)
+                    : await MorphemeApi.FetchPrivateWordListAsync(fetchedWordListOverview.WordListGuid, userId: Guid.Parse(UserState.UserId ?? ""));
+
+                    if (fetchedWordList is not null)
+                    {
+                        wordList = fetchedWordList;
+                        wordEntries = ConvertDictionaryToWordEntryList(wordList.Words);
+                        wordInputCount = wordEntries.Count();
+                    }
+                }
+            }
+            catch when (!isPublic) // Only catch exceptions for private lists
+            {
+                return;
+            }
+        }
+
+        private void InitializeWordEntries()
+        {
+            wordEntries.Clear();
+            for (int i = 0; i < 5; i++)
+            {
+                wordEntries.Add(new WordEntry());
+            }
+        }
+
+        public List<WordEntry> ConvertDictionaryToWordEntryList(Dictionary<string, string> dictionary)
+        {
+            return dictionary.Select(kvp => new WordEntry
+            {
+                Word = kvp.Key,
+                Definition = kvp.Value
+            }).ToList();
+        }
+
+        private async Task HandleSubmit()
+        {
+            // Validate lengths before proceeding
+            if (TitleCharacterCount > TitleMaxLength)
+            {
+                notificationServiceHelper?.ShowError($"Title is too long! Maximum {TitleMaxLength} characters allowed.");
+                return;
+            }
+
+            if (DescriptionCharacterCount > DescriptionMaxLength)
+            {
+                notificationServiceHelper?.ShowError($"Description is too long! Maximum {DescriptionMaxLength} characters allowed.");
+                return;
+            }
+
+            if (TagsCharacterCount > TagsMaxLength)
+            {
+                notificationServiceHelper?.ShowError($"Tags are too long! Maximum {TagsMaxLength} characters allowed.");
+                return;
+            }
+
+            // First sanitize user inputs for profanity
+            wordListOverview.Title = await ProfanityFilterHelper.SanitizeTextAsync(wordListOverview.Title);
+
+            if (wordListOverview.Description != null)
+            {
+                wordListOverview.Description = await ProfanityFilterHelper.SanitizeTextAsync(wordListOverview.Description);
+            }
+            TagInput = await ProfanityFilterHelper.SanitizeTextAsync(TagInput);
+
+            // Sanitize word entries for profanity
+            for (int i = 0; i < wordEntries.Count; i++)
+            {
+                wordEntries[i].Word = await ProfanityFilterHelper.SanitizeTextAsync(wordEntries[i].Word);
+                wordEntries[i].Definition = await ProfanityFilterHelper.SanitizeTextAsync(wordEntries[i].Definition);
+            }
+
+            // Prepare the WordList with the current input forms
+            wordList.Words = PrepareDictionaryFromInputs();
+
+            if (wordList.Words.Count < 5)
+            {
+                return;
+            }
+
+            // Call on post when EditForm is submitted
+            await OnPost(wordListOverview, TagInput);
+        }
+
+        private Dictionary<string, string> PrepareDictionaryFromInputs()
+        {
+            // Remove entries with empty words
+            var nonEmptyEntries = wordEntries
+            .Where(entry => !string.IsNullOrWhiteSpace(entry.Word))
+            .ToList();
+
+            // Remove duplicate words (case-insensitive)
+            var uniqueWordEntries = nonEmptyEntries
+            .GroupBy(entry => entry.Word.Trim().ToLowerInvariant())
+            .Select(g => g.First())
+            .ToList();
+
+            // Remove duplicate definitions (case-insensitive)
+            var uniqueEntries = uniqueWordEntries
+            .GroupBy(entry => entry.Definition?.Trim().ToLowerInvariant() ?? string.Empty)
+            .Select(g => g.First())
+            .ToList();
+
+            // Track the number of duplicates removed
+            int wordDuplicatesRemoved = nonEmptyEntries.Count - uniqueWordEntries.Count;
+            int definitionDuplicatesRemoved = uniqueWordEntries.Count - uniqueEntries.Count;
+
+            // Update the wordEntries list to reflect unique entries
+            wordEntries.Clear();
+            wordEntries.AddRange(uniqueEntries);
+
+            // Ensure we always have at least 5 entries
+            while (wordEntries.Count < 5)
+            {
+                wordEntries.Add(new WordEntry());
+            }
+
+            // Update the input count
+            wordInputCount = Math.Max(5, uniqueEntries.Count);
+
+            // Notify user if duplicates were removed
+            if (wordDuplicatesRemoved > 0 || definitionDuplicatesRemoved > 0)
+            {
+                var messages = new List<string>();
+                if (wordDuplicatesRemoved > 0)
+                    messages.Add($"{wordDuplicatesRemoved} duplicate word(s) have been removed.");
+
+                if (definitionDuplicatesRemoved > 0)
+                    messages.Add($"{definitionDuplicatesRemoved} duplicate definition(s) have been removed.");
+
+                notificationServiceHelper?.ShowWarning(string.Join(" ", messages));
+            }
+
+            // Prepare the dictionary with unique words
+            return uniqueEntries
+            .ToDictionary(
+            entry => entry.Word.Trim(),
+            entry => entry.Definition?.Trim() ?? string.Empty
+            );
+        }
+
+        public async Task OnPost(WordListOverview wordListOverview, string TagInput)
+        {
+            // Process tags
+            if (!string.IsNullOrWhiteSpace(TagInput))
+            {
+                string[] rawTags = TagInput.Split(',')
+                .Select(t => t.Trim())
+                .Where(t => !string.IsNullOrEmpty(t))
+                .ToArray();
+
+                // Apply profanity filter to tags
+                wordListOverview.Tags = await ProfanityFilterHelper.SanitizeTagsAsync(rawTags);
+            }
+
+            wordListOverview.LastModifiedDate = DateTime.Now;
+
+            // First apply your existing sanitizer for other security concerns
+            wordList.Words = WordListSanitizerHelper.SanitizeWordList(wordList.Words);
+
+            // Then apply profanity filter
+            wordList.Words = await ProfanityFilterHelper.SanitizeWordListAsync(wordList.Words);
+
+            // Validate word count
+            if (wordList.Words.Count > 100)
+            {
+                notificationServiceHelper?.ShowError($"Too many words! ({wordList.Words.Count}/100)");
+                return;
+            }
+
+            if (wordList.Words.Count < 5)
+            {
+                notificationServiceHelper?.ShowError($"Need at least 5 words. ({wordList.Words.Count}/5)");
+                return;
+            }
+
+            wordListOverview.WordSample = wordList.Words.Take(5).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+            await SaveWordList();
+        }
+
+        private async Task SaveWordList()
+        {
+            try
+            {
+                var wordListCreateResponse = await MorphemeApi.CreateWordList(wordList);
+                if (!wordListCreateResponse.IsSuccessStatusCode)
+                {
+                    @*                      _logger.LogError($"Failed to create word list. Status code: {wordListCreateResponse.StatusCode}");
+*@                  notificationServiceHelper?.ShowError($"Failed to create word list: {wordListCreateResponse.StatusCode}");
+                    return;
+                }
+
+                var wordListOverviewCreateResponse = await MorphemeApi.CreateWordListOverview(wordListOverview);
+                if (!wordListOverviewCreateResponse.IsSuccessStatusCode)
+                {
+                    @*                      _logger.LogError($"Failed to create word list overview. Status code: {wordListOverviewCreateResponse.StatusCode}");
+*@                  notificationServiceHelper?.ShowError($"Failed to create word list overview: {wordListOverviewCreateResponse.StatusCode}");
+                    return;
+                }
+
+                notificationServiceHelper?.ShowSuccess("Word list updated successfully");
+                await Task.Delay(1000);
+                _navigationManager.NavigateTo($"/Profile/{UserState.UserId}");
+            }
+            catch (Exception @* ex *@)
+            {
+                notificationServiceHelper?.ShowError("An unexpected error occurred. Please try again shortly.");
+                @*              _logger.LogError(ex, "Unexpected error during word list save");
+*@          }
+        }
+
+        private void AddWordEntry()
+        {
+            if (wordInputCount < 100)
+            {
+                wordEntries.Add(new WordEntry());
+                wordInputCount++;
+            }
+        }
+
+        private void RemoveWordEntry(int indexToRemove)
+        {
+            // Prevent removing entries if there are only 5 or fewer
+            if (wordInputCount > 5 && indexToRemove >= 5)
+            {
+                wordEntries.RemoveAt(indexToRemove);
+                wordInputCount--;
+            }
+        }
+
+        private void NavigateToUri(string uri)
+        {
+            _navigationManager.NavigateTo(uri, forceLoad: true);
+        }
+
+        private void HandleShowNotification(string message, NotificationServiceHelper.NotificationType type)
+        {
+            ToastMessage = message;
+            ToastClass = type switch
+            {
+                NotificationServiceHelper.NotificationType.Success => "alert alert-success",
+                NotificationServiceHelper.NotificationType.Error => "alert alert-error",
+                NotificationServiceHelper.NotificationType.Warning => "alert alert-warning",
+                NotificationServiceHelper.NotificationType.Info => "alert alert-info",
+                _ => "alert"
+            };
+            ShowToast = true;
+            StateHasChanged();
+        }
+
+        private void HandleClearNotification()
+        {
+            ClearToast();
+        }
+
+        private void ClearToast()
+        {
+            ShowToast = false;
+            ToastMessage = string.Empty;
+            ToastClass = string.Empty;
+            StateHasChanged();
+        }
+
+        public void Dispose()
+        {
+            if (notificationServiceHelper != null){
+                notificationServiceHelper.OnShowNotification -= HandleShowNotification;
+                notificationServiceHelper.OnClearNotification -= HandleClearNotification;
+            }
+        }
+    }
+    </Authorized>
+    <NotAuthorized>
+        <p><strong>Please <a href="authentication/login">log in</a> to edit word lists.</strong></p>
+    </NotAuthorized>
+</AuthorizeView>

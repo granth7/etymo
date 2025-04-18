@@ -14,7 +14,7 @@ internal static class LoginLogoutEndpointRouteBuilderExtensions
             .AllowAnonymous();
 
         group.MapPost("/logout", () => TypedResults.SignOut(new AuthenticationProperties { RedirectUri = "/" },
-            [CookieAuthenticationDefaults.AuthenticationScheme, OpenIdConnectDefaults.AuthenticationScheme]));
+            [CookieAuthenticationDefaults.AuthenticationScheme, "keycloak"]));
 
         return group;
     }

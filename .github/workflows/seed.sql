@@ -1,7 +1,8 @@
 CREATE TABLE word_list (
     Guid UUID NOT NULL PRIMARY KEY,
     CreatorGuid UUID NOT NULL,
-    Words JSONB NOT NULL
+    Words JSONB NOT NULL,
+    IsPublic BOOLEAN NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS word_list_overview (
@@ -20,9 +21,14 @@ CREATE TABLE IF NOT EXISTS word_list_overview (
         REFERENCES word_list(Guid) ON DELETE CASCADE                               
 );
 
+CREATE TABLE user_upvotes (
+    id SERIAL PRIMARY KEY,
+    user_guid UUID NOT NULL,
+    word_list_overview_guid UUID NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_guid, word_list_overview_guid)
+);
 
-
---INSERT INTO word_list_overview (Guid, Title, Description)
---VALUES 
---    ('550e8400-e29b-41d4-a716-446655440000', 'Test Title 1', 'Test Description 1'),
---    ('550e8400-e29b-41d4-a716-446655440001', 'Test Title 2', 'Test Description 2');
+-- Add indexes for performance
+CREATE INDEX idx_user_upvotes_user_guid ON user_upvotes(user_guid);
+CREATE INDEX idx_user_upvotes_word_list_overview_guid ON user_upvotes(word_list_overview_guid);

@@ -39,10 +39,15 @@ namespace etymo.Web.Components.Extensions
         public static void RemoveFragment(this NavigationManager navManager)
         {
             var uri = new Uri(navManager.Uri);
+
             if (!string.IsNullOrEmpty(uri.Fragment))
             {
-                var newUri = uri.GetLeftPart(UriPartial.Path); // Remove fragment
-                navManager.NavigateTo(newUri, forceLoad: false);
+                var uriBuilder = new UriBuilder(uri)
+                {
+                    Fragment = string.Empty // This removes just the fragment
+                };
+
+                navManager.NavigateTo(uriBuilder.Uri.ToString(), forceLoad: false);
             }
         }
     }

@@ -2,7 +2,9 @@ using Dapper;
 using etymo.ApiService.Postgres;
 using etymo.ApiService.Postgres.Handlers;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Shared.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +40,11 @@ builder.Services.AddScoped<PostgresService>();
 
 builder.Services.AddControllers();
 
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+});
+
 builder.Services.AddAuthentication()
                 .AddKeycloakJwtBearer("keycloak", realm: "Etymo", options =>
                 {
@@ -66,25 +73,36 @@ var latinSuffixes = JsonConvert.DeserializeObject<Dictionary<string, string>>(la
 app.UseExceptionHandler();
 
 
-app.MapGet("/morphemelist", (string gameType) =>
+app.MapGet("/morphemelist", async (string wordListGuid, bool isPublic, string? userId, PostgresService postgresService) =>
 {
     var morphemeList = new Dictionary<string, string>();
-    if (gameType == "latinPrefixes")
+
+    var postgresController = new PostgresController(postgresService);
+
+    IActionResult response;
+
+    // Fetch the wordListOverview by guid and public visibility
+    if (isPublic)
     {
-        morphemeList = latinPrefixes;
+        response = await postgresController.FetchWordListAsync(new Guid(wordListGuid));
     }
-    else if (gameType == "latinSuffixes")
+    else if (isPublic == false && userId is not null)
     {
-        morphemeList = latinSuffixes;
+        response = await postgresController.FetchPrivateWordListAsync(new Guid(wordListGuid), userId: Guid.Parse(userId));
     }
     else
     {
-        morphemeList = null;
+        response = new BadRequestResult();
+    }
+
+    if (response is OkObjectResult okResult && okResult.Value is WordList wordList)
+    {
+        morphemeList = wordList.Words;
     }
 
     if (morphemeList != null && morphemeList.Count > 0)
     {
-        int morphemeListSize = 5;
+        int morphemeListSize = morphemeList.Count;
         var random = new Random();
         var list = new List<Morepheme>();
 

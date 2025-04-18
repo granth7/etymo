@@ -10,15 +10,16 @@ public static class TestDataHelper
     /// </summary>
     /// <param name="guid">Optional GUID for the WordList. If not provided, a new GUID will be generated.</param>
     /// <param name="creatorGuid">Optional GUID of the user who created the WordListOverview. If not provided, a new GUID will be generated.</param>
+    /// <param name="ispublic">Optional bool set to true if public, false if private. If not provided, it will be set to true by default.</param>
     /// <param name="words">Optional dictionary of words and definitions. If not provided, a default dictionary will be used.</param>
     /// <returns>A WordList object.</returns>
-    public static WordList CreateWordList(Guid? guid = null, Guid? creatorGuid = null, Dictionary<string, string>? words = null)
+    public static WordList CreateWordList(Guid? guid = null, Guid? creatorGuid = null, bool ispublic = true, Dictionary<string, string>? words = null)
     {
         return new WordList
         {
             Guid = guid ?? Guid.NewGuid(),
             CreatorGuid = creatorGuid ?? Guid.NewGuid(),
-
+            IsPublic = ispublic,
             Words = words ?? new Dictionary<string, string>
             {
                 { "word1", "definition1" },
