@@ -1,6 +1,8 @@
 ﻿using Dapper;
+using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Shared.Models;
+using System.Data;
 
 namespace etymo.ApiService.Postgres
 {
@@ -22,11 +24,11 @@ namespace etymo.ApiService.Postgres
             return await _connection.QuerySingleAsync<WordListOverview>(sql);
         }
 
-        public async Task<WordList> FetchWordListAsync(Guid wordListId)
+        public async Task<WordList?> FetchWordListAsync(Guid wordListId)
         {
             string sql = $"SELECT * FROM word_list WHERE guid='{wordListId}' AND ispublic = true";
 
-            return await _connection.QuerySingleAsync<WordList>(sql);
+            return await _connection.QuerySingleOrDefaultAsync<WordList>(sql);
         }
 
         public async Task<WordList> FetchPrivateWordListAsync(Guid wordListId, Guid userId)
@@ -244,16 +246,6 @@ namespace etymo.ApiService.Postgres
             }
         }
 
-        //public async Task<bool> HasUserUpvotedAsync(Guid userGuid, Guid wordListOverviewGuid)
-        //{
-        //    var count = await _connection.ExecuteScalarAsync<int>(
-        //        "SELECT COUNT(1) FROM user_upvotes WHERE user_guid = @UserGuid AND word_list_overview_guid = @WordListGuid",
-        //        new { UserGuid = userGuid, WordListGuid = wordListOverviewGuid }
-        //    );
-
-        //    return count > 0;
-        //}
-
         public async Task<int> GetUpvoteCountAsync(Guid wordListOverviewGuid)
         {
             return await _connection.ExecuteScalarAsync<int>(
@@ -273,6 +265,59 @@ namespace etymo.ApiService.Postgres
             );
 
             return wordListGuids.ToDictionary(guid => guid, guid => upvotedLists.Contains(guid));
+        }
+
+        public async Task<int> CreateReport(ReportRequest request, string userId)
+        {
+            var sql = @"
+                INSERT INTO reports (reportedcontentid, reporteruserid, reason, details)
+                VALUES (@ContentId::uuid, @UserId, @Reason, @Details)
+                RETURNING id";
+            var id = await _connection.ExecuteScalarAsync<int>(sql, new
+            {
+                request.ContentId,
+                UserId = userId,
+                request.Reason,
+                request.Details
+            });
+            return id;
+        }
+
+        public async Task<List<Report>> GetReports()
+        {
+            var sql = @"
+                SELECT r.*, wl.Title as ContentTitle, wl.Description as ContentDescription, wl.Tags as ContentTags, wl.CreatorGuid as ReportedUserId, wl.WordListGuid as ContentWordsId
+                FROM reports r
+                JOIN word_list_overview wl ON r.reportedcontentid = wl.Guid
+                WHERE r.status = 'pending'
+                ORDER BY r.createdat DESC";
+            return [.. (await _connection.QueryAsync<Report>(sql))];
+        }
+
+        public async Task<int> ResolveReports(int reportId, string action, string resolverId)
+        {
+            // Update report status
+            await _connection.ExecuteAsync(
+                "UPDATE reports SET status = @Status, resolvedat = NOW(), resolveruserid = @UserId WHERE id = @Id",
+                new { Status = action, UserId = resolverId, Id = reportId });
+
+            // If action is "remove", also hide the content
+            if (action == "remove")
+            {
+                // Get content ID (GUID corresponding to word list overview) from reportId (int)
+                var contentId = await _connection.ExecuteScalarAsync<Guid>(
+                    "SELECT ReportedContentId FROM reports WHERE id = @Id",
+                    new { Id = reportId });
+
+                // Update content status in word_list_overview
+                return await _connection.ExecuteAsync(
+                    "UPDATE word_list_overview SET ishidden = true WHERE Guid = @Id::uuid",
+                    new { Id = contentId });
+            }
+            else
+            {
+                return 0;
+            }
         }
     }
 }

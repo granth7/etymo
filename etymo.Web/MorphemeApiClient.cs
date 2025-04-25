@@ -270,6 +270,33 @@ public class MorphemeApiClient(HttpClient httpClient, IAntiforgeryService antifo
             throw;
         }
     }
+
+    public async Task<int> CreateReportAsync(ReportRequest reportRequest)
+    {
+        var response = await httpClient.PostAsJsonAsync("/postgres/report", reportRequest);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<int>();
+    }
+
+    public async Task<List<Report>> GetReportsAsync(CancellationToken cancellationToken = default)
+    {
+        List<Report> reports = [];
+        await foreach (var report in httpClient.GetFromJsonAsAsyncEnumerable<Report>("/postgres/reports", cancellationToken))
+        {
+            if (report is not null)
+            {
+                reports.Add(report);
+            }
+        }
+        return reports;
+    }
+
+    public async Task<int> ResolveReportAsync(int reportId, string action)
+    {
+        var response = await httpClient.PutAsJsonAsync($"/postgres/report?reportId={reportId}&action={Uri.EscapeDataString(action)}", new { });
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<int>();
+    }
 }
 
 public record Morpheme(KeyValuePair<string, string> Kvp)

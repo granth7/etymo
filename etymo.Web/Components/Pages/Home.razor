@@ -26,6 +26,40 @@
     </div>
 }
 
+@* Report Modal *@
+<div class="modal @(reportModalOpen ? "modal-open" : "")" id="report-modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">Report Content</h3>
+        <div class="form-control mt-4">
+            <label class="label">
+                <span class="label-text">Reason</span>
+            </label>
+            <select class="select select-bordered w-full" @bind="reportReason">
+                <option value="">Select a reason</option>
+                <option value="offensive">Offensive content</option>
+                <option value="spam">Spam</option>
+                <option value="harassment">Harassment</option>
+                <option value="misinformation">Misinformation</option>
+                <option value="other">Other</option>
+            </select>
+            @if (reportReasonError)
+            {
+                <span class="text-error text-sm mt-1">Please select a reason</span>
+            }
+        </div>
+        <div class="form-control mt-4">
+            <label class="label">
+                <span class="label-text">Additional details</span>
+            </label>
+            <textarea class="textarea textarea-bordered w-full" @bind="reportDetails" rows="3" placeholder="Please provide additional details about your report"></textarea>
+        </div>
+        <div class="modal-action">
+            <button type="button" class="btn" @onclick="CloseReportModal">Cancel</button>
+            <button type="button" class="btn btn-primary" @onclick="SubmitReport">Submit Report</button>
+        </div>
+    </div>
+</div>
+
 <div class="container mx-auto px-4 py-8">
     <!-- Create New Word List Section -->
     <div class="card bg-base-100 shadow-xl mb-8">
@@ -115,9 +149,9 @@
     </div>
 
     <div class="grid grid-cols-1 gap-6">
-        @if (popularWordListOverviews != null && popularWordListOverviews.Any())
+        @if (popularWordListOverviews != null && popularWordListOverviews.Where(w => !w.IsHidden).Any())
         {
-            @foreach (var wordListOverview in popularWordListOverviews)
+            @foreach (var wordListOverview in popularWordListOverviews.Where(w => !w.IsHidden))
             {
                 <div class="card bg-base-100 shadow-xl">
                     <div class="card-body">
@@ -126,8 +160,8 @@
                                 <h3 class="card-title text-xl">@wordListOverview.Title</h3>
                                 <p class="text-sm text-gray-500">@wordListOverview.CreatedDate.ToShortDateString()</p>
                             </div>
-                            <div class="badge badge-outline">Category here?</div>
-                        </div>
+@*                             <div class="badge badge-outline">Category here?</div>
+ *@                        </div>
 
                         <p class="my-2">@wordListOverview.Description</p>
 
@@ -208,6 +242,47 @@
                                     }
                                     <span>@wordListOverview.Upvotes</span>
                                 </div>
+
+                                <!-- Report Flag Button -->
+                                <div class="flex items-center gap-1">
+                                    @if (@UserState.IsAuthenticated == true)
+                                    {
+                                        <button @onclick="() => OpenReportModal(wordListOverview.Guid.ToString())"
+                                                class="flex items-center gap-1 hover:text-red-500 transition-colors"
+                                                title="Report this content">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 3v18h18" />
+                                                <path d="M15 3h6v6" />
+                                                <path d="m10 15 5-5" />
+                                            </svg>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="flex items-center gap-1 hover:text-red-500 transition-colors"
+                                                onclick="document.getElementById('login-modal-report').showModal()"
+                                                title="Report this content">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 3v18h18" />
+                                                <path d="M15 3h6v6" />
+                                                <path d="m10 15 5-5" />
+                                            </svg>
+                                        </button>
+
+                                        <dialog id="login-modal-report" class="modal">
+                                            <div class="modal-box">
+                                                <h3 class="font-bold text-lg">Login Required</h3>
+                                                <p class="py-4">You need to be logged in to report content.</p>
+                                                <div class="modal-action">
+                                                    <form method="dialog">
+                                                        <a href="authentication/login" class="btn btn-primary">Login</a>
+                                                        <button class="btn">Cancel</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </dialog>
+                                    }
+                                </div>
                             </div>
 
                             <a href="/Game/@wordListOverview.WordListGuid?ispublic=@wordListOverview.IsPublic.ToString().ToLower()"
@@ -258,6 +333,13 @@
         private int currentPage = 1;
         private const int pageSize = 10;
         private bool hasMoreLists = false;
+
+        // Report modal variables
+        private bool reportModalOpen = false;
+        private string reportContentId = string.Empty;
+        private string reportReason = string.Empty;
+        private string reportDetails = string.Empty;
+        private bool reportReasonError = false;
 
         protected override async Task OnInitializedAsync()
         {
@@ -368,6 +450,61 @@
             {
                 // Show error message
                 notificationServiceHelper?.ShowError($"Failed to update upvote. {ex.Message}");
+            }
+        }
+
+        // Report functionality
+        private void OpenReportModal(string contentId)
+        {
+            if (!UserState.IsAuthenticated)
+            {
+                return;
+            }
+
+            reportContentId = contentId;
+            reportReason = string.Empty;
+            reportDetails = string.Empty;
+            reportReasonError = false;
+            reportModalOpen = true;
+            StateHasChanged();
+        }
+
+        private void CloseReportModal()
+        {
+            reportModalOpen = false;
+            reportContentId = string.Empty;
+            reportReason = string.Empty;
+            reportDetails = string.Empty;
+            reportReasonError = false;
+            StateHasChanged();
+        }
+
+        private async Task SubmitReport()
+        {
+            if (string.IsNullOrWhiteSpace(reportReason))
+            {
+                reportReasonError = true;
+                StateHasChanged();
+                return;
+            }
+
+            try
+            {
+                var reportRequest = new ReportRequest
+                {
+                    ContentId = reportContentId,
+                    Reason = reportReason,
+                    Details = reportDetails
+                };
+
+                await MorphemeApi.CreateReportAsync(reportRequest);
+
+                notificationServiceHelper?.ShowSuccess("Report submitted successfully. Our moderators will review it shortly.");
+                CloseReportModal();
+            }
+            catch (Exception ex)
+            {
+                notificationServiceHelper?.ShowError($"Failed to submit report. {ex.Message}");
             }
         }
 

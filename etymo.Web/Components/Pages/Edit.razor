@@ -168,7 +168,7 @@
     <Authorized>
         @code
         {
-            public required WordListOverview wordListOverview;
+        public required WordListOverview wordListOverview;
         public required WordList wordList;
         private bool ShowToast { get; set; }
         private string? ToastMessage;
@@ -242,7 +242,6 @@
 
 
                     await FetchWordListDataAsync(guid, ispublic);
-
                 }
             }
             else if (UserState.IsAuthenticated == false)
@@ -443,6 +442,8 @@
                 notificationServiceHelper?.ShowError($"Need at least 5 words. ({wordList.Words.Count}/5)");
                 return;
             }
+
+            wordList.IsPublic = wordListOverview.IsPublic;
 
             wordListOverview.WordSample = wordList.Words.Take(5).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,13 +68,17 @@ builder.Services.AddAuthentication(options =>
                     : "http://localhost:8080/realms/Etymo"; 
                     options.ClientId = "EtymoWeb";
                     options.ResponseType = OpenIdConnectResponseType.Code;
+                    options.Scope.Add("openid profile email roles"); // Explicitly request roles
                     options.Scope.Add("etymo:all");
                     options.Scope.Add("offline_access");
                     options.RequireHttpsMetadata = environment != "Development"; 
                     options.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Name;
+                    options.TokenValidationParameters.RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
                     options.SaveTokens = true;
                     options.SignInScheme = cookieScheme;
                     options.UseTokenLifetime = true;
+                    // Ensure role claims are mapped
+                    options.ClaimActions.MapJsonKey(ClaimTypes.Role, "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
                 })
                 .AddCookie(cookieScheme, options =>
                 {

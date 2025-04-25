@@ -10,6 +10,7 @@ namespace Shared.Models
         public required string Title { get; set; }
 
         public bool IsPublic { get; set; }
+        public bool IsHidden { get; set; }
         public bool UserHasUpvoted { get; set; } 
         public int Upvotes { get; set; }
         //public string? CreatorName { get; set; }

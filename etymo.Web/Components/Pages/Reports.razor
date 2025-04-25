@@ -1,0 +1,317 @@
+﻿@page "/admin/reports"
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@using Shared.Models
+@using etymo.Web.Components.Services
+@using etymo.Web.Components.Helpers
+@attribute [Authorize(Roles = "admin, content_moderator")]
+@inject MorphemeApiClient MorphemeApiClient
+
+<PageTitle>Reports Management</PageTitle>
+
+<div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4">Reports Management</h1>
+
+    @if (isLoading)
+    {
+        <div class="flex justify-center items-center h-40">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+    }
+    else if (reports == null || !reports.Any())
+    {
+        <div class="alert alert-info">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>No reports found.</span>
+        </div>
+    }
+    else
+    {
+        <div class="tabs mb-4">
+            <a class="tab tab-bordered @(currentFilter == "all" ? "tab-active" : "")"
+               @onclick="@(() => FilterReports("all"))">All (@reports.Count)</a>
+
+            <a class="tab tab-bordered @(currentFilter == "pending" ? "tab-active" : "")"
+               @onclick="@(() => FilterReports("pending"))">Pending (@reports.Count(r => r.Status == "pending"))</a>
+
+            <a class="tab tab-bordered @(currentFilter == "resolved" ? "tab-active" : "")"
+               @onclick="@(() => FilterReports("resolved"))">Resolved (@reports.Count(r => r.Status != "pending"))</a>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="table w-full">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Content</th>
+                        <th>Reporter</th>
+                        <th>Reason</th>
+                        <th>Created At</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var report in filteredReports)
+                    {
+                        <tr class="@(report.Status == "pending" ? "bg-base-200" : "")">
+                            <td>@report.Id</td>
+                            <td>
+                                <div class="flex flex-col">
+                                    <a href="/Game/@report.ContentWordsId?ispublic=true" target="_blank" class="link link-primary">
+                                        @(report.ContentTitle ?? report.ReportedContentId.ToString().Substring(0, 8) + "...")
+                                    </a>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="/Profile/@report.ReporterUserId" target="_blank" class="link link-primary">
+                                    @report.ReporterUserId.Substring(0, 8)...
+                                </a>
+                            </td>
+                            <td>@report.Reason</td>
+                            <td>@report.CreatedAt.ToLocalTime().ToString("g")</td>
+                            <td>
+                                <span class="badge @GetStatusBadgeClass(report.Status)">
+                                    @report.Status
+                                </span>
+                            </td>
+                            <td>
+                                @if (report.Status == "pending")
+                                {
+                                    <div class="flex space-x-2">
+                                        <button class="btn btn-sm btn-success" @onclick="@(() => OpenReportDetailsModal(report, "approve"))">
+                                            approve
+                                        </button>
+                                        <button class="btn btn-sm btn-error" @onclick="@(() => OpenReportDetailsModal(report, "remove"))">
+                                            remove
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm" @onclick="@(() => OpenReportDetailsModal(report, "view"))">
+                                        View Details
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@if (selectedReport != null)
+{
+    <div class="modal modal-open">
+        <div class="modal-box max-w-3xl">
+            <h3 class="font-bold text-lg">Report Details</h3>
+            <div class="py-4 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <span class="font-bold">Report ID:</span> @selectedReport.Id
+                    </div>
+                    <div>
+                        <span class="font-bold">Status:</span>
+                        <span class="badge @GetStatusBadgeClass(selectedReport.Status)">@selectedReport.Status</span>
+                    </div>
+                    <div>
+                        <span class="font-bold">Created:</span> @selectedReport.CreatedAt.ToLocalTime().ToString("g")
+                    </div>
+                    @if (selectedReport.ResolvedAt.HasValue)
+                    {
+                        <div>
+                            <span class="font-bold">Resolved:</span> @selectedReport.ResolvedAt.Value.ToLocalTime().ToString("g")
+                        </div>
+                        <div>
+                            <span class="font-bold">Resolved by:</span> @selectedReport.ResolverUserId
+                        </div>
+                    }
+                </div>
+
+                <hr class="my-2" />
+
+                <div class="bg-base-200 p-4 rounded">
+                    <h4 class="font-bold text-md mb-2">Reported Content</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <span class="font-bold">Content ID:</span>
+                            <a href="/Game/@selectedReport.ReportedContentId?ispublic=true" target="_blank" class="link link-primary">
+                                @selectedReport.ReportedContentId
+                            </a>
+                        </div>
+                        @if (selectedReport.ContentWordsId.HasValue)
+                        {
+                            <div>
+                                <span class="font-bold">Word List ID:</span>
+                                <a href="/Game/@selectedReport.ContentWordsId?ispublic=true" target="_blank" class="link link-primary">
+                                    @selectedReport.ContentWordsId
+                                </a>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(selectedReport.ContentTitle))
+                    {
+                        <div class="mt-2">
+                            <span class="font-bold">Title:</span> @selectedReport.ContentTitle
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(selectedReport.ContentDescription))
+                    {
+                        <div class="mt-2">
+                            <span class="font-bold">Description:</span>
+                            <p class="whitespace-pre-wrap bg-base-100 p-2 rounded mt-1">@selectedReport.ContentDescription</p>
+                        </div>
+                    }
+
+                    @if (selectedReport.ContentTags != null && selectedReport.ContentTags.Any())
+                    {
+                        <div class="mt-2">
+                            <span class="font-bold">Tags:</span>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                @foreach (var tag in selectedReport.ContentTags)
+                                {
+                                    <span class="badge badge-primary">@tag</span>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (selectedReport.ReportedUserId.HasValue)
+                    {
+                        <div class="mt-2">
+                            <span class="font-bold">Created by:</span>
+                            <a href="/Profile/@selectedReport.ReportedUserId" target="_blank" class="link link-primary">
+                                @selectedReport.ReportedUserId
+                            </a>
+                        </div>
+                    }
+                </div>
+
+                <hr class="my-2" />
+
+                <div class="bg-base-200 p-4 rounded">
+                    <h4 class="font-bold text-md mb-2">Report Information</h4>
+                    <div>
+                        <span class="font-bold">Reporter:</span>
+                        <a href="/Profile/@selectedReport.ReporterUserId" target="_blank" class="link link-primary">
+                            @selectedReport.ReporterUserId
+                        </a>
+                    </div>
+                    <div class="mt-2">
+                        <span class="font-bold">Reason:</span> @selectedReport.Reason
+                    </div>
+                    <div class="mt-2">
+                        <span class="font-bold">Details:</span>
+                        <p class="whitespace-pre-wrap bg-base-100 p-2 rounded mt-1">@selectedReport.Details</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-action">
+                @if (selectedReport.Status == "pending" && selectedAction == "approve")
+                {
+                    <button class="btn btn-success" @onclick="@(() => ResolveReport("approve"))">Approve Content</button>
+                }
+                @if (selectedReport.Status == "pending" && selectedAction == "remove")
+                {
+                    <button class="btn btn-error" @onclick="@(() => ResolveReport("remove"))">Remove Content</button>
+                }
+                <button class="btn" @onclick="CloseModal">Close</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Report> reports = new();
+    private List<Report> filteredReports = new();
+    private bool isLoading = true;
+    private string currentFilter = "pending";
+    private Report? selectedReport = null;
+    private string selectedAction = string.Empty;
+    private NotificationServiceHelper? notificationServiceHelper;
+
+    protected override async Task OnInitializedAsync()
+    {
+        notificationServiceHelper = new NotificationServiceHelper();
+
+        await LoadReports();
+    }
+
+    private async Task LoadReports()
+    {
+        isLoading = true;
+
+        try
+        {
+            reports = await MorphemeApiClient.GetReportsAsync();
+            FilterReports(currentFilter);
+        }
+        catch (Exception ex)
+        {
+            notificationServiceHelper?.ShowError($"Error loading reports: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void FilterReports(string filter)
+    {
+        currentFilter = filter;
+
+        filteredReports = filter switch
+        {
+            "pending" => reports.Where(r => r.Status == "pending").ToList(),
+            "resolved" => reports.Where(r => r.Status != "pending").ToList(),
+            _ => reports.ToList()
+        };
+    }
+
+    private void OpenReportDetailsModal(Report report, string action)
+    {
+        selectedReport = report;
+        selectedAction = action;
+    }
+
+    private void CloseModal()
+    {
+        selectedReport = null;
+        selectedAction = string.Empty;
+    }
+
+    private async Task ResolveReport(string action)
+    {
+        try
+        {
+            if (selectedReport == null) return;
+
+            await MorphemeApiClient.ResolveReportAsync(selectedReport.Id, Uri.EscapeDataString(action));
+
+            notificationServiceHelper?.ShowSuccess($"Report {selectedReport.Id} has been {action}d successfully.");
+
+            await LoadReports();
+            CloseModal();
+        }
+        catch (Exception ex)
+        {
+            notificationServiceHelper?.ShowError($"Error resolving report: {ex.Message}");
+        }
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "pending" => "badge-warning",
+            "approved" => "badge-success",
+            "removed" => "badge-error",
+            _ => "badge-info"
+        };
+    }
+}

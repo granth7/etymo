@@ -7,6 +7,7 @@
 @using etymo.Web.Components.Services
 @inject UserStateService UserState
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject MorphemeApiClient MorphemeApiClient
 
 <AuthorizeView>
     <Authorized>
@@ -14,19 +15,33 @@
             <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
                 <div class="w-10 rounded-full">
                     <img alt="User Avatar"
-                         src="@AvatarUrl" />
+                    src="@AvatarUrl" />
                 </div>
             </div>
             <ul tabindex="0"
-                class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
+            class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
                 <li>
                     <a href="/Profile/@UserState.UserId" class="justify-between btn">
                         Profile
-                        @*                         <span class="badge">New</span>
- *@                    </a>
+                    </a>
                 </li>
-                <li><a>Settings</a></li>
-                <li>
+
+                <AuthorizeView Roles="admin, content_moderator">
+                    <Authorized Context="moderation">
+                        <li>
+                            <a href="/admin/reports" class="justify-between btn">
+                                Reports
+                                @if (PendingReportsCount > 0)
+                                {
+                                    <span class="badge badge-error">@PendingReportsCount</span>
+                                }
+                            </a>
+                        </li>
+                    </Authorized>
+                </AuthorizeView>
+
+@*                 <li><a>Settings</a></li>
+ *@                <li>
                     <form method="post" action="authentication/logout" style="display:inline;">
                         <AntiforgeryToken />
                         <button type="submit" class="btn btn-link">Logout</button>
@@ -45,10 +60,12 @@
     private string? UserGuid { get; set; }
 
     private string AvatarUrl { get; set; } = "https://api.dicebear.com/9.x/thumbs/svg?seed=fallback";
+    private int PendingReportsCount { get; set; } = 0;
 
     protected override async Task OnInitializedAsync()
     {
         await GetAvatarUrl();
+        await GetPendingReportsCount();
     }
 
     private async Task GetAvatarUrl()
@@ -56,7 +73,6 @@
         // Get the authentication state
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-
         if (user.Identity?.IsAuthenticated != true)
         {
             return;
@@ -76,6 +92,30 @@
         {
             // Use DiceBear API to generate a unique avatar based on user ID
             AvatarUrl = $"https://api.dicebear.com/9.x/thumbs/svg?seed={userId}";
+        }
+    }
+
+    private async Task GetPendingReportsCount()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true && 
+            (user.IsInRole("admin") || user.IsInRole("content_moderator")))
+        {
+            try
+            {
+                var reports = await MorphemeApiClient.GetReportsAsync();
+                if (reports != null)
+                {
+                    PendingReportsCount = reports.Count(r => r.Status == "pending");
+                }
+            }
+            catch (Exception)
+            {
+                // Silent fail - badge won't show if there's an error
+                PendingReportsCount = 0;
+            }
         }
     }
 }

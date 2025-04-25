@@ -206,5 +206,42 @@ namespace etymo.ApiService.Postgres
                 upvoteCount
             });
         }
+
+        [HttpPost("report")]
+        [Authorize]
+        public async Task<IActionResult> CreateReport([FromBody] ReportRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var result = await _postgresService.CreateReport(request, userId);
+
+            return Ok(result);
+        }
+
+        [HttpGet("reports")]
+        [Authorize(Roles = "admin, content_moderator")]
+        public async Task<IActionResult> GetReports()
+        {
+            var result = await _postgresService.GetReports();
+
+            return Ok(result);
+        }
+
+        [HttpPut("report")]
+        [Authorize(Roles = "admin, content_moderator")]
+        public async Task<IActionResult> ResolveReport([FromQuery]int reportId, [FromQuery]string action)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var result = await _postgresService.ResolveReports(reportId, action, resolverId: userId);
+
+            return Ok(result);
+        }
     }
 }
