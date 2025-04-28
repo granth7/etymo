@@ -123,6 +123,33 @@
         </div>
     </div>
 
+    <!-- Search Bar -->
+    <div class="card bg-base-100 shadow-xl mb-8">
+        <div class="card-body">
+            <h2 class="card-title text-2xl font-bold">Search Word Lists</h2>
+            <div class="join w-full">
+                <input type="text"
+                       placeholder="Search by tag..."
+                       class="input input-bordered join-item w-full"
+                       @bind="tagSearchText"
+                       @bind:event="oninput"
+                       @onkeydown="@HandleKeyDown" />
+                <button class="btn btn-primary join-item" @onclick="SearchTags">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </button>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(tagSearchText))
+            {
+                <div class="mt-2 flex items-center">
+                    <div class="badge badge-primary">Searching: @tagSearchText</div>
+                    <button class="btn btn-xs btn-ghost ml-2" @onclick="ClearSearch">Clear</button>
+                </div>
+            }
+        </div>
+    </div>
+
     <!-- Popular Word Lists Feed -->
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold">Popular Word Lists</h2>
@@ -327,6 +354,8 @@
         private string? ToastMessage;
         private string? ToastClass { get; set; }
 
+        private string tagSearchText = string.Empty;
+
         // New state variables for date range filtering
         private DateRange? selectedDateRange = null;
         private bool isLoading = false;
@@ -365,7 +394,8 @@
                 popularWordListOverviews = await MorphemeApi.GetWordListOverviewsAsync(
                 dateRange: selectedDateRange,
                 pageNumber: currentPage,
-                pageSize: pageSize);
+                pageSize: pageSize,
+                tagSearch: tagSearchText);  // Add tag search parameter
 
                 // If we got exactly pageSize items, there might be more
                 hasMoreLists = popularWordListOverviews.Count == pageSize;
@@ -399,7 +429,8 @@
                 var nextPageLists = await MorphemeApi.GetWordListOverviewsAsync(
                 dateRange: selectedDateRange,
                 pageNumber: currentPage,
-                pageSize: pageSize);
+                pageSize: pageSize,
+                tagSearch: tagSearchText);  // Add tag search parameter
 
                 if (nextPageLists.Any())
                 {
@@ -544,7 +575,26 @@
                 notificationServiceHelper.OnClearNotification -= HandleClearNotification;
             }
         }
+
+        private async Task SearchTags()
+        {
+            await LoadWordListsAsync();
         }
+
+        private void ClearSearch()
+        {
+            tagSearchText = string.Empty;
+            _ = LoadWordListsAsync();
+        }
+
+        private async Task HandleKeyDown(KeyboardEventArgs e)
+        {
+            if (e.Key == "Enter")
+            {
+                await SearchTags();
+            }
+        }
+    }
     </Authorized>
     <NotAuthorized>
     </NotAuthorized>

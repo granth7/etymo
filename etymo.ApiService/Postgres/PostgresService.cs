@@ -39,18 +39,21 @@ namespace etymo.ApiService.Postgres
         }
 
         public async Task<List<WordListOverview>> SelectPublicWordListOverviewsAsync(
-        Guid? userId = null,
-        DateRange? dateRange = null,
-        int pageNumber = 1,
-        int pageSize = 10,
-        Guid? currentUserGuid = null)
+            Guid? userId = null,
+            DateRange? dateRange = null,
+            int pageNumber = 1,
+            int pageSize = 10,
+            Guid? currentUserGuid = null,
+            string? tagSearch = null)  // Add parameter for tag search
         {
             string sql = "SELECT * FROM word_list_overview WHERE 1=1";
+
             // Add filters only if they're provided
             if (userId != null)
             {
                 sql += $" AND creatorguid = '{userId}'";
             }
+
             if (dateRange.HasValue)
             {
                 // Handle date range filter based on the enum value
@@ -67,20 +70,34 @@ namespace etymo.ApiService.Postgres
                         break;
                 }
             }
+
+            // Add tag search if provided
+            if (!string.IsNullOrWhiteSpace(tagSearch))
+            {
+                // Search for tags that contain the search term
+                sql += " AND EXISTS (SELECT 1 FROM unnest(tags) AS tag WHERE LOWER(tag) LIKE LOWER(@TagSearch))";
+            }
+
             sql += " AND ispublic = true";
+
             // Add ORDER BY clause to sort by upvotes in descending order
             sql += " ORDER BY upvotes DESC";
 
             // Add pagination
             sql += $" LIMIT {pageSize} OFFSET {(pageNumber - 1) * pageSize}";
 
-            var wordListOverviews = (List<WordListOverview>)await _connection.QueryAsync<WordListOverview>(sql);
+            var parameters = new DynamicParameters();
+            if (!string.IsNullOrWhiteSpace(tagSearch))
+            {
+                parameters.Add("TagSearch", $"%{tagSearch}%");
+            }
+
+            var wordListOverviews = (List<WordListOverview>)await _connection.QueryAsync<WordListOverview>(sql, parameters);
 
             // If we have a current user, fetch their upvote status for these word lists
             if (currentUserGuid.HasValue && currentUserGuid != Guid.Empty && wordListOverviews.Count != 0)
             {
                 var wordListOverviewGuids = wordListOverviews.Select(wl => wl.Guid).ToArray();
-
                 string upvoteSql = "SELECT word_list_overview_guid FROM user_upvotes WHERE user_guid = @UserGuid AND word_list_overview_guid = ANY(@WordListGuids)";
                 var upvotedLists = await _connection.QueryAsync<Guid>(upvoteSql, new { UserGuid = currentUserGuid, WordListGuids = wordListOverviewGuids });
 

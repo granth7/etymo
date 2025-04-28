@@ -31,7 +31,8 @@ namespace etymo.ApiService.Postgres
             [FromQuery] Guid? userId = null,
             [FromQuery] DateRange? dateRange = null,
             [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? tagSearch = null)  // Add this parameter
         {
             // Validate pagination parameters
             pageNumber = Math.Max(1, pageNumber);
@@ -39,7 +40,6 @@ namespace etymo.ApiService.Postgres
 
             // Get the current user's GUID
             Guid? currentUserGuid = null;
-
             if (User != null && User.Identity != null && User.Identity.IsAuthenticated)
             {
                 // Get the user ID from claims
@@ -55,7 +55,8 @@ namespace etymo.ApiService.Postgres
                 dateRange,
                 pageNumber,
                 pageSize,
-                currentUserGuid); // Pass the current user's GUID
+                currentUserGuid,
+                tagSearch); 
 
             if (wordListOverviews == null)
             {

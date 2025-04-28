@@ -80,6 +80,7 @@ public class MorphemeApiClient(HttpClient httpClient, IAntiforgeryService antifo
        DateRange? dateRange = null,
        int pageNumber = 1,
        int pageSize = 10,
+       string? tagSearch = null,
        CancellationToken cancellationToken = default)
     {
         List<WordListOverview> WordListOverviews = [];
@@ -99,6 +100,10 @@ public class MorphemeApiClient(HttpClient httpClient, IAntiforgeryService antifo
         // Add pagination parameters
         queryParams.Add($"pageNumber={pageNumber}");
         queryParams.Add($"pageSize={pageSize}");
+
+        // Add tag parameters
+        if (!string.IsNullOrWhiteSpace(tagSearch))
+            queryParams.Add($"tagSearch={Uri.EscapeDataString(tagSearch)}");
 
         // Append query string if there are parameters
         string requestUri = path;
