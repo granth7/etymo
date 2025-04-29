@@ -5,6 +5,7 @@
         private string? userId;
         private string? userName;
         private bool isAuthenticated;
+        private bool isAdmin;
 
         public bool IsAuthenticated
         {
@@ -12,6 +13,16 @@
             set
             {
                 isAuthenticated = value;
+                NotifyStateChanged();
+            }
+        }
+
+        public bool IsAdmin
+        {
+            get => isAdmin;
+            set
+            {
+                isAdmin = value;
                 NotifyStateChanged();
             }
         }

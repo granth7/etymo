@@ -33,9 +33,7 @@ namespace etymo.ApiService.Postgres.Filters
             }
 
             // Check if the user is an admin (this check is independent of resource ownership)
-            bool isAdmin = context.HttpContext.User.Claims
-                .Any(c => c.Type == "role" && c.Value.Equals("admin",
-                    StringComparison.OrdinalIgnoreCase));
+            bool isAdmin = context.HttpContext.User.IsInRole("admin");
 
             // First try to find an ICreatorOwned object
             var creatorOwnedResource = context.ActionArguments.Values

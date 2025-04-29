@@ -59,19 +59,19 @@
 
                 <div class="join">
                     <button class="join-item btn @(selectedPrivateDateRange == null ? "btn-primary" : "")"
-                            @onclick="() => FilterPrivateByDateRange(null)">
+                    @onclick="() => FilterPrivateByDateRange(null)">
                         All Time
                     </button>
                     <button class="join-item btn @(selectedPrivateDateRange == DateRange.Today ? "btn-primary" : "")"
-                            @onclick="() => FilterPrivateByDateRange(DateRange.Today)">
+                    @onclick="() => FilterPrivateByDateRange(DateRange.Today)">
                         Today
                     </button>
                     <button class="join-item btn @(selectedPrivateDateRange == DateRange.Week ? "btn-primary" : "")"
-                            @onclick="() => FilterPrivateByDateRange(DateRange.Week)">
+                    @onclick="() => FilterPrivateByDateRange(DateRange.Week)">
                         This Week
                     </button>
                     <button class="join-item btn @(selectedPrivateDateRange == DateRange.Month ? "btn-primary" : "")"
-                            @onclick="() => FilterPrivateByDateRange(DateRange.Month)">
+                    @onclick="() => FilterPrivateByDateRange(DateRange.Month)">
                         This Month
                     </button>
                 </div>
@@ -93,10 +93,10 @@
                                 </p>
                             </div>
 
-                            @if (!viewingOtherProfile)
+                            @if (!viewingOtherProfile || UserState.IsAdmin)
                             {
                                 <div class="flex items-center gap-2">
-@*                                     <div class="badge badge-outline">Category here?</div>
+                                    @*                                     <div class="badge badge-outline">Category here?</div>
  *@                                    <button @onclick="@(e => NavigateToUri($"/Edit/{wordListOverview.Guid}?ispublic={wordListOverview.IsPublic.ToString().ToLower()}"))" class="btn btn-ghost btn-xs" title="Edit">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />
@@ -155,7 +155,7 @@
                                     </i>
                                     <span>@wordListOverview.Upvotes</span>
                                 </div>
-@*                                 <div class="flex items-center gap-1">
+                                @*                                 <div class="flex items-center gap-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                                         <circle cx="9" cy="7" r="4" />
@@ -233,19 +233,19 @@
 
         <div class="join">
             <button class="join-item btn @(selectedPublicDateRange == null ? "btn-primary" : "")"
-                    @onclick="() => FilterPublicByDateRange(null)">
+            @onclick="() => FilterPublicByDateRange(null)">
                 All Time
             </button>
             <button class="join-item btn @(selectedPublicDateRange == DateRange.Today ? "btn-primary" : "")"
-                    @onclick="() => FilterPublicByDateRange(DateRange.Today)">
+            @onclick="() => FilterPublicByDateRange(DateRange.Today)">
                 Today
             </button>
             <button class="join-item btn @(selectedPublicDateRange == DateRange.Week ? "btn-primary" : "")"
-                    @onclick="() => FilterPublicByDateRange(DateRange.Week)">
+            @onclick="() => FilterPublicByDateRange(DateRange.Week)">
                 This Week
             </button>
             <button class="join-item btn @(selectedPublicDateRange == DateRange.Month ? "btn-primary" : "")"
-                    @onclick="() => FilterPublicByDateRange(DateRange.Month)">
+            @onclick="() => FilterPublicByDateRange(DateRange.Month)">
                 This Month
             </button>
         </div>
@@ -264,10 +264,10 @@
                                 <p class="text-sm text-gray-500">@wordListOverview.CreatedDate.ToShortDateString()</p>
                             </div>
 
-                            @if (!viewingOtherProfile)
+                            @if (!viewingOtherProfile || UserState.IsAdmin)
                             {
                                 <div class="flex items-center gap-2">
-@*                                     <div class="badge badge-outline">Category here?</div>
+                                    @*                                     <div class="badge badge-outline">Category here?</div>
  *@                                    <button @onclick="@(e => NavigateToUri($"/Edit/{wordListOverview.Guid}?ispublic={wordListOverview.IsPublic.ToString().ToLower()}"))" class="btn btn-ghost btn-xs" title="Edit">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />
@@ -327,7 +327,7 @@
                                     </i>
                                     <span>@wordListOverview.Upvotes</span>
                                 </div>
-@*                                 <div class="flex items-center gap-1">
+                                @*                                 <div class="flex items-center gap-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                                         <circle cx="9" cy="7" r="4" />
@@ -402,8 +402,8 @@
 
 @code
 {
-    [Parameter]
-    public required string guid { get; set; }
+        [Parameter]
+        public required string guid { get; set; }
     private List<WordListOverview>? privateWordListOverviews;
     private List<WordListOverview>? publicWordListOverviews;
     private NotificationServiceHelper? notificationServiceHelper;
@@ -625,7 +625,7 @@
         {
             try
             {
-                var wordListOverviewDeleteResponse = await MorphemeApi.DeleteWordListOverviewAsync(toBeDeleted.Guid, Guid.Parse(UserState.UserId));
+                var wordListOverviewDeleteResponse = await MorphemeApi.DeleteWordListOverviewAsync(toBeDeleted.Guid, toBeDeleted.CreatorGuid);
                 if (!wordListOverviewDeleteResponse.IsSuccessStatusCode)
                 {
                     @*                      _logger.LogError($"Failed to delete word list. Status code: {wordListOverviewDeleteResponse.StatusCode}");
@@ -637,7 +637,8 @@
                 CloseModal();
                 notificationServiceHelper?.ShowSuccess("Word list deleted successfully!");
                 await Task.Delay(1000);
-                _navigationManager.NavigateTo($"/Profile/{UserState.UserId}", forceLoad: true);
+                _navigationManager.NavigateTo($"/Profile/{toBeDeleted.CreatorGuid}", forceLoad: true);
+                toBeDeleted = null;
             }
             catch (Exception 
     @* ex *@)
@@ -671,6 +672,5 @@
     private void CloseModal()
     {
         ClickedDelete = false;
-        toBeDeleted = null;
     }
 }

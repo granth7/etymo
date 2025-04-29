@@ -52,6 +52,8 @@
                 UserState.UserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
                     ?? user.FindFirst("sub")?.Value;
 
+                UserState.IsAdmin = user.IsInRole("admin");
+
                 UserState.UserName = user.Identity.Name;
             }
             else
