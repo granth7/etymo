@@ -30,7 +30,6 @@
         {
             using var client = new HttpClient();
             var response = await client.GetAsync($"{GetBaseUrl()}/api/heartbeat");
-
             // Log the response for debugging
             if (response.IsSuccessStatusCode)
             {
@@ -41,6 +40,11 @@
             {
                 Console.WriteLine($"Heartbeat failed: {response.StatusCode}");
             }
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuit disconnected, can't continue
+            Console.WriteLine("Circuit disconnected during heartbeat");
         }
         catch (Exception ex)
         {
@@ -56,13 +60,27 @@
 
     public async ValueTask DisposeAsync()
     {
-        // Clean up resources
-        if (_module != null)
+        try
         {
-            await _module.InvokeVoidAsync("stopHeartbeat");
-            await _module.DisposeAsync();
+            // Clean up resources
+            if (_module != null)
+            {
+                await _module.InvokeVoidAsync("stopHeartbeat");
+                await _module.DisposeAsync();
+            }
         }
-
-        _jsRef?.Dispose();
+        catch (JSDisconnectedException)
+        {
+            // Circuit already disconnected, nothing to worry about
+            Console.WriteLine("Circuit disconnected during disposal");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during disposal: {ex.Message}");
+        }
+        finally
+        {
+            _jsRef?.Dispose();
+        }
     }
 }

@@ -69,11 +69,11 @@
             <div class="card-actions justify-end">
                 @if (@UserState.IsAuthenticated == true)
                 {
-                    <a href="/Create" class="btn btn-primary">Create New List</a>
+                    <a href="/Create" class="btn btn-primary">Create</a>
                 }
                 else
                 {
-                    <button class="btn btn-primary" onclick="document.getElementById('login-modal').showModal()">Create New List</button>
+                    <button class="btn btn-primary" onclick="document.getElementById('login-modal').showModal()">Create</button>
 
                     <dialog id="login-modal" class="modal">
                         <div class="modal-box">
@@ -96,15 +96,15 @@
     <div class="card bg-base-100 shadow-xl mb-8">
         <div class="card-body">
             <h2 class="card-title text-2xl font-bold">Where's my stuff?</h2>
-            <p class="mb-4">Don't want to see other lists? Tap 'Go to profile' to see the lists you created. Login required.</p>
+            <p class="mb-4">Don't want to see other lists? Tap 'Profile' to see the lists you created. Login required.</p>
             <div class="card-actions justify-end">
                 @if (@UserState.IsAuthenticated == true)
                 {
-                    <a href="/Profile/@UserState.UserId" class="btn btn-primary">Go to profile</a>
+                    <a href="/Profile/@UserState.UserId" class="btn btn-primary">Profile</a>
                 }
                 else
                 {
-                    <button class="btn btn-primary" onclick="document.getElementById('login-modal-2').showModal()">Go to profile</button>
+                    <button class="btn btn-primary" onclick="document.getElementById('login-modal-2').showModal()">Profile</button>
 
                     <dialog id="login-modal-2" class="modal">
                         <div class="modal-box">

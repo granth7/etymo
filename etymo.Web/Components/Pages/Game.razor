@@ -28,7 +28,7 @@ else
             <dialog id="game_over_modal" class="modal modal-bottom sm:modal-middle @openGameOverModal">
                 <div class="modal-box">
                     <h3 class="text-lg font-bold">Game Over!</h3>
-                    <p class="py-4">Good try! Press 'New Game' to try new words, or press 'close' to see your results.</p>
+                    <p class="py-4">Good try! Tap 'New Game' to browse popular word lists, or press 'close' to see your results.</p>
                     <div class="modal-action">
                         <form method="dialog">
                             <!-- if there is a button in form, it will close the modal -->
@@ -50,7 +50,7 @@ else
             <dialog id="game_won_modal" class="modal modal-bottom sm:modal-middle @openGameWonModal">
                 <div class="modal-box">
                     <h3 class="text-lg font-bold">Congratulations!</h3>
-                    <p class="py-4">You did it! Press 'New Game' to try new words, or press 'close' to see your results.</p>
+                    <p class="py-4">You did it! Tap 'New Game' to browse popular word lists, or press 'close' to see your results.</p>
                     <div class="modal-action">
                         <form method="dialog">
                             <!-- if there is a button in form, it will close the modal -->
@@ -118,7 +118,7 @@ else
 
             <br />
 
-            <h2 class="grid-item text-2xl font-bold col-start-2 col-span-5 ">Tap the answer that matches the colored flashcard, then hit submit to guess!</h2>
+            <h2 class="grid-item text-2xl font-bold col-start-2 col-span-5 ">Tap the button that matches the colored flashcard, then hit submit to guess!</h2>
 
             <h2 class="grid-item text-1xl font-bold col-start-2 col-span-5">@numberGuessedCorrectly out of @allMorphemes.Length guessed</h2>
 
@@ -256,7 +256,7 @@ else
                 <h1 class="grid-item text-1xl font-bold col-start-2 col-span-5">@mistakesMade mistakes</h1>
             }
 
-            <button class="btn btn-enabled w-32 rounded col-end-6" @onclick="@(e => NavigateToUri("/"))">NEW GAME</button>
+            <button class="btn btn-enabled w-32 rounded col-end-6" @onclick="@(e => NavigateToUri($"/Game/{guid}?ispublic={ispublic.ToString().ToLower()}"))">Play again</button>
         }
     </div>
 }
