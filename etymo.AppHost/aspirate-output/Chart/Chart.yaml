@@ -1,5 +1,5 @@
 apiVersion: v2
 name: etymo
 description: A Helm chart to Deploy etymo to Kubernetes.
-appVersion: 0.0.1-371
-version: 0.0.1-371
+appVersion: 0.0.1-375
+version: 0.0.1-375
