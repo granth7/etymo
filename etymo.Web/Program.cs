@@ -108,9 +108,34 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IAntiforgeryService, AntiforgeryService>();
 builder.Services.AddScoped<UserStateService>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowEtymoOrigin", policy =>
+    {
+        if (builder.Environment.IsProduction())
+        {
+            // Production - only allow your domain
+            policy.WithOrigins("https://etymo.hender.tech")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
+        else
+        {
+            // Development/Staging - allow localhost with various ports
+            policy.WithOrigins(
+                    "http://localhost:7031"
+                )
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        }
+    });
+});
+
 var app = builder.Build();
 
-// 1. Exception handling FIRST
+// 1. Exception handling and Production policy setup.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -123,6 +148,7 @@ app.UseStaticFiles();  // This must come before routing
 
 // 3. Routing BEFORE auth middleware
 app.UseRouting();
+app.UseCors();
 
 // 4. Authentication/Authorization
 app.UseAuthentication();
@@ -137,63 +163,68 @@ app.MapGet("/api/heartbeat", async (HttpContext context) =>
 {
     try
     {
-        // Only process authenticated requests
-        if (context.User.Identity?.IsAuthenticated == true)
+        // Check authentication first without redirecting
+        if (context.User.Identity?.IsAuthenticated != true)
         {
-            // Get the authentication properties
-            var authenticateResult = await context.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-            if (authenticateResult?.Succeeded == true)
+            // Add CORS headers manually for unauthenticated responses
+            if (context.Request.Headers.TryGetValue("Origin", out var origin))
             {
-                // Get the cookie options and scheme from DI
-                var optionsMonitor = context.RequestServices
-                    .GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>();
-                var schemeProvider = context.RequestServices
-                    .GetRequiredService<IAuthenticationSchemeProvider>();
+                context.Response.Headers.Append("Access-Control-Allow-Origin", origin.ToString());
+                context.Response.Headers.Append("Access-Control-Allow-Credentials", "true");
+                context.Response.Headers.Append("Access-Control-Allow-Methods", "GET");
+            }
 
-                var schemeName = CookieAuthenticationDefaults.AuthenticationScheme;
-                var options = optionsMonitor.Get(schemeName);
-                var scheme = await schemeProvider.GetSchemeAsync(schemeName);
+            // Return 401 instead of redirecting
+            return Results.StatusCode(401);
+        }
 
-                if (scheme != null)
+        // Only process for authenticated users
+        var authenticateResult = await context.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        if (authenticateResult?.Succeeded == true)
+        {
+            // Get the cookie options and scheme from DI
+            var optionsMonitor = context.RequestServices
+                .GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>();
+            var schemeProvider = context.RequestServices
+                .GetRequiredService<IAuthenticationSchemeProvider>();
+            var schemeName = CookieAuthenticationDefaults.AuthenticationScheme;
+            var options = optionsMonitor.Get(schemeName);
+            var scheme = await schemeProvider.GetSchemeAsync(schemeName);
+            if (scheme != null)
+            {
+                // Create the authentication ticket
+                var ticket = new AuthenticationTicket(
+                    authenticateResult.Principal,
+                    authenticateResult.Properties,
+                    schemeName);
+                // Create the validation context
+                var validateContext = new CookieValidatePrincipalContext(
+                    context,
+                    scheme,
+                    options,
+                    ticket);
+                // Call our token refresh handler
+                await TokenRefreshHandler.RefreshTokenIfNeeded(validateContext);
+                // If token was refreshed and principal isn't null, sign in with the new properties
+                if (validateContext.ShouldRenew && validateContext.Principal != null)
                 {
-                    // Create the authentication ticket
-                    var ticket = new AuthenticationTicket(
-                        authenticateResult.Principal,
-                        authenticateResult.Properties,
-                        schemeName);
-
-                    // Create the validation context
-                    var validateContext = new CookieValidatePrincipalContext(
-                        context,
-                        scheme,
-                        options,
-                        ticket);
-
-                    // Call our token refresh handler
-                    await TokenRefreshHandler.RefreshTokenIfNeeded(validateContext);
-
-                    // If token was refreshed and principal isn't null, sign in with the new properties
-                    if (validateContext.ShouldRenew && validateContext.Principal != null)
-                    {
-                        await context.SignInAsync(
-                            CookieAuthenticationDefaults.AuthenticationScheme,
-                            validateContext.Principal,
-                            validateContext.Properties);
-
-                        return Results.Ok(new { refreshed = true, timestamp = DateTime.UtcNow });
-                    }
+                    await context.SignInAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        validateContext.Principal,
+                        validateContext.Properties);
+                    return Results.Ok(new { refreshed = true, timestamp = DateTime.UtcNow });
                 }
             }
         }
-
         return Results.Ok(new { refreshed = false, timestamp = DateTime.UtcNow });
     }
     catch (Exception ex)
     {
         return Results.Problem(ex.Message);
     }
-}).RequireAuthorization();
+})
+// Apply CORS policy specifically to this endpoint
+.RequireCors("AllowEtymoOrigin");  
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
