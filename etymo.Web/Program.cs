@@ -159,7 +159,7 @@ app.UseOutputCache();
 app.UseAntiforgery();
 
 // 6. Add the heartbeat endpoint
-app.MapGet("/api/heartbeat", async (HttpContext context) =>
+app.MapGet("/heartbeat", async (HttpContext context) =>
 {
     try
     {

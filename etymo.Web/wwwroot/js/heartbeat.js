@@ -7,7 +7,7 @@ export function startHeartbeat(intervalMs) {
     }
     // Set up the interval
     heartbeatInterval = setInterval(() => {
-        fetch('/api/heartbeat', {
+        fetch('/heartbeat', {
             method: 'GET',
             mode: 'cors',
             credentials: 'include',
