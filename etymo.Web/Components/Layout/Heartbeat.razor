@@ -1,4 +1,5 @@
 ﻿@inject IJSRuntime JSRuntime
+@inject MorphemeApiClient ApiClient
 @implements IAsyncDisposable
 
 @code {
@@ -10,14 +11,11 @@
         if (firstRender)
         {
             _jsRef = DotNetObjectReference.Create(this);
-
             // Load the module with our JS code
             _module = await JSRuntime.InvokeAsync<IJSObjectReference>(
                 "import", "./js/heartbeat.js");
-
             // Start the heartbeat
             await _module.InvokeVoidAsync("startHeartbeat", 300000); // 5 minutes
-
             // Make an immediate call
             await TriggerHeartbeat();
         }
@@ -28,8 +26,9 @@
     {
         try
         {
-            using var client = new HttpClient();
-            var response = await client.GetAsync($"{GetBaseUrl()}/api/heartbeat");
+            // Use the injected ApiClient instead of creating a new HttpClient
+            var response = await ApiClient.GetHeartbeatAsync();
+            
             // Log the response for debugging
             if (response.IsSuccessStatusCode)
             {
@@ -52,11 +51,8 @@
         }
     }
 
-    private string GetBaseUrl()
-    {
-        // This assumes the app is not in a virtual directory
-        return "";
-    }
+    // GetBaseUrl method is no longer needed as we're using the ApiClient
+    // which already has the BaseAddress configured
 
     public async ValueTask DisposeAsync()
     {
