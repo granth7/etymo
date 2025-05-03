@@ -1,5 +1,12 @@
-﻿@inject IJSRuntime JSRuntime
-@inject MorphemeApiClient ApiClient
+﻿@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.Extensions.Options
+@using etymo.Web.Components.Handlers
+@inject IJSRuntime JSRuntime
+@inject IAuthenticationService AuthService
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IOptionsMonitor<CookieAuthenticationOptions> OptionsMonitor
+@inject IAuthenticationSchemeProvider SchemeProvider
 @implements IAsyncDisposable
 
 @code {
@@ -10,65 +17,106 @@
     {
         if (firstRender)
         {
-            _jsRef = DotNetObjectReference.Create(this);
-            // Load the module with our JS code
-            _module = await JSRuntime.InvokeAsync<IJSObjectReference>(
-                "import", "./js/heartbeat.js");
-            // Start the heartbeat
-            await _module.InvokeVoidAsync("startHeartbeat", 300000); // 5 minutes
-            // Make an immediate call
-            await TriggerHeartbeat();
+            try
+            {
+                Console.WriteLine("Attempting to load heartbeat.js...");
+
+                _module = await JSRuntime.InvokeAsync<IJSObjectReference>(
+                    "import", "./js/heartbeat.js");
+
+                Console.WriteLine("Module loaded, checking functions...");
+
+                _jsRef = DotNetObjectReference.Create(this);
+                await _module.InvokeVoidAsync("initializeHeartbeat", _jsRef);
+                await _module.InvokeVoidAsync("startHeartbeat", 300000);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"JS Error: {ex.Message}");
+            }
         }
     }
 
     [JSInvokable]
-    public async Task TriggerHeartbeat()
+    public async Task<object> TriggerHeartbeat()
     {
         try
         {
-            // Use the injected ApiClient instead of creating a new HttpClient
-            var response = await ApiClient.GetHeartbeatAsync();
-            
-            // Log the response for debugging
-            if (response.IsSuccessStatusCode)
+            var context = HttpContextAccessor.HttpContext;
+            if (context == null)
             {
-                var content = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Heartbeat success: {content}");
+                Console.WriteLine("HttpContext not available");
+                return new { status = "error", message = "HttpContext not available" };
             }
-            else
+
+            // Check authentication
+            if (context.User.Identity?.IsAuthenticated != true)
             {
-                Console.WriteLine($"Heartbeat failed: {response.StatusCode}");
+                Console.WriteLine("User not authenticated");
+                return new { status = "unauthenticated" };
             }
-        }
-        catch (JSDisconnectedException)
-        {
-            // Circuit disconnected, can't continue
-            Console.WriteLine("Circuit disconnected during heartbeat");
+
+            var authenticateResult = await context.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if (authenticateResult?.Succeeded != true)
+            {
+                Console.WriteLine("Authentication failed");
+                return new { status = "unauthenticated" };
+            }
+
+            var schemeName = CookieAuthenticationDefaults.AuthenticationScheme;
+            var options = OptionsMonitor.Get(schemeName);
+            var scheme = await SchemeProvider.GetSchemeAsync(schemeName);
+
+            if (scheme != null && authenticateResult.Principal != null)
+            {
+                var ticket = new AuthenticationTicket(
+                    authenticateResult.Principal,
+                    authenticateResult.Properties,
+                    schemeName);
+
+                var validateContext = new CookieValidatePrincipalContext(
+                    context,
+                    scheme,
+                    options,
+                    ticket);
+
+                await TokenRefreshHandler.RefreshTokenIfNeeded(validateContext);
+
+                if (validateContext.ShouldRenew && validateContext.Principal != null)
+                {
+                    await context.SignInAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        validateContext.Principal,
+                        validateContext.Properties);
+
+                    Console.WriteLine("Token refreshed");
+                    return new { status = "success", refreshed = true, timestamp = DateTime.UtcNow };
+                }
+                else
+                {
+                    Console.WriteLine("No token refresh needed");
+                    return new { status = "success", refreshed = false, timestamp = DateTime.UtcNow };
+                }
+            }
+
+            return new { status = "success", refreshed = false, timestamp = DateTime.UtcNow };
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Heartbeat exception: {ex.Message}");
+            return new { status = "error", message = ex.Message };
         }
     }
-
-    // GetBaseUrl method is no longer needed as we're using the ApiClient
-    // which already has the BaseAddress configured
 
     public async ValueTask DisposeAsync()
     {
         try
         {
-            // Clean up resources
             if (_module != null)
             {
                 await _module.InvokeVoidAsync("stopHeartbeat");
                 await _module.DisposeAsync();
             }
-        }
-        catch (JSDisconnectedException)
-        {
-            // Circuit already disconnected, nothing to worry about
-            Console.WriteLine("Circuit disconnected during disposal");
         }
         catch (Exception ex)
         {

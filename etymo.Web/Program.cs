@@ -28,7 +28,7 @@ builder.Services.AddHttpClient<MorphemeApiClient>(client =>
         // Use either HTTPS or HTTP explicitly - not both
         client.BaseAddress = builder.Environment.IsDevelopment()
             ? new Uri("http://etymo-apiservice")  // HTTP for development
-            : new Uri("https://etymo-apiservice"); // HTTPS for production
+            : new Uri("https://etymo-apiservice:8443"); // HTTPS for production
     })
     .AddHttpMessageHandler<AuthorizationHandler>();
 
@@ -39,7 +39,6 @@ if (environment is not null)
 {
     TokenRefreshHandler.Environment = environment;
 }
-
 
 // Shared cookie configuration
 Action<CookieBuilder> configureCookie = cookie =>
@@ -108,31 +107,6 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IAntiforgeryService, AntiforgeryService>();
 builder.Services.AddScoped<UserStateService>();
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowEtymoOrigin", policy =>
-    {
-        if (builder.Environment.IsProduction())
-        {
-            // Production - only allow your domain
-            policy.WithOrigins("https://etymo.hender.tech")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-        }
-        else
-        {
-            // Development/Staging - allow localhost with various ports
-            policy.WithOrigins(
-                    "http://localhost:7031"
-                )
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
-        }
-    });
-});
-
 var app = builder.Build();
 
 // 1. Exception handling and Production policy setup.
@@ -148,7 +122,6 @@ app.UseStaticFiles();  // This must come before routing
 
 // 3. Routing BEFORE auth middleware
 app.UseRouting();
-app.UseCors();
 
 // 4. Authentication/Authorization
 app.UseAuthentication();
@@ -157,74 +130,6 @@ app.UseAuthorization();
 // 5. Output cache and anti-forgery
 app.UseOutputCache();
 app.UseAntiforgery();
-
-// 6. Add the heartbeat endpoint
-app.MapGet("/heartbeat", async (HttpContext context) =>
-{
-    try
-    {
-        // Check authentication first without redirecting
-        if (context.User.Identity?.IsAuthenticated != true)
-        {
-            // Add CORS headers manually for unauthenticated responses
-            if (context.Request.Headers.TryGetValue("Origin", out var origin))
-            {
-                context.Response.Headers.Append("Access-Control-Allow-Origin", origin.ToString());
-                context.Response.Headers.Append("Access-Control-Allow-Credentials", "true");
-                context.Response.Headers.Append("Access-Control-Allow-Methods", "GET");
-            }
-
-            // Return 401 instead of redirecting
-            return Results.StatusCode(401);
-        }
-
-        // Only process for authenticated users
-        var authenticateResult = await context.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        if (authenticateResult?.Succeeded == true)
-        {
-            // Get the cookie options and scheme from DI
-            var optionsMonitor = context.RequestServices
-                .GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>();
-            var schemeProvider = context.RequestServices
-                .GetRequiredService<IAuthenticationSchemeProvider>();
-            var schemeName = CookieAuthenticationDefaults.AuthenticationScheme;
-            var options = optionsMonitor.Get(schemeName);
-            var scheme = await schemeProvider.GetSchemeAsync(schemeName);
-            if (scheme != null)
-            {
-                // Create the authentication ticket
-                var ticket = new AuthenticationTicket(
-                    authenticateResult.Principal,
-                    authenticateResult.Properties,
-                    schemeName);
-                // Create the validation context
-                var validateContext = new CookieValidatePrincipalContext(
-                    context,
-                    scheme,
-                    options,
-                    ticket);
-                // Call our token refresh handler
-                await TokenRefreshHandler.RefreshTokenIfNeeded(validateContext);
-                // If token was refreshed and principal isn't null, sign in with the new properties
-                if (validateContext.ShouldRenew && validateContext.Principal != null)
-                {
-                    await context.SignInAsync(
-                        CookieAuthenticationDefaults.AuthenticationScheme,
-                        validateContext.Principal,
-                        validateContext.Properties);
-                    return Results.Ok(new { refreshed = true, timestamp = DateTime.UtcNow });
-                }
-            }
-        }
-        return Results.Ok(new { refreshed = false, timestamp = DateTime.UtcNow });
-    }
-    catch (Exception ex)
-    {
-        return Results.Problem(ex.Message);
-    }
-})
-// Apply CORS policy specifically to this endpoint
-.RequireCors("AllowEtymoOrigin");  
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
