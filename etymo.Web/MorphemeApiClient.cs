@@ -65,7 +65,8 @@ public class MorphemeApiClient(HttpClient httpClient, IAntiforgeryService antifo
 
     public async Task<HttpResponseMessage> GetHeartbeatAsync()
     {
-        return await httpClient.GetAsync("/heartbeat");
+        var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/heartbeat", UriKind.Relative));
+        return await httpClient.SendAsync(request);
     }
 
     public async Task<HttpResponseMessage> CreateWordList(WordList wordList)
