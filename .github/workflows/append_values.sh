@@ -25,6 +25,11 @@ expose:
         - hosts:
             - \"sso.your.domain\"
           secretName: \"\"
+apiservice:
+  tls:
+    enabled: false
+    issuer: \"letsencrypt-staging\"
+    secretName: \"\"
 secrets:
   connectionStrings:
     existingPostgres: \"secret-name/secret-key\"
