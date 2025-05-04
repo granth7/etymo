@@ -28,7 +28,7 @@ expose:
 apiservice:
   tls:
     enabled: false
-    issuer: \"letsencrypt-staging\"
+    issuer: \"\"
     secretName: \"\"
 secrets:
   connectionStrings:
