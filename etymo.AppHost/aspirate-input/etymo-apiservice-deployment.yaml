@@ -33,6 +33,14 @@ spec:
                 key: {{ (split "/" .Values.secrets.connectionStrings.existingPostgres)._1 }}
         imagePullPolicy: IfNotPresent
         name: etymo-apiservice
+        volumeMounts:
+          - name: tls-secret
+            mountPath: /etc/ssl/private
+            readOnly: true
+        volumes:
+          - name: tls-secret
+            secret:
+              secretName: {{ .Values.apiservice.tls.secretName }}
         ports:
         - containerPort: 8080
           name: http
