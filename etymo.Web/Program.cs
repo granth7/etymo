@@ -25,10 +25,10 @@ builder.Services.AddHttpContextAccessor()
 
 builder.Services.AddHttpClient<MorphemeApiClient>(client =>
     {
-        // Use either HTTPS or HTTP explicitly - not both
+        // Specify http port in prod.
         client.BaseAddress = builder.Environment.IsDevelopment()
-            ? new Uri("http://etymo-apiservice")  // HTTP for development
-            : new Uri("https://etymo-apiservice:8443"); // HTTPS for production
+            ? new Uri("http://etymo-apiservice")
+            : new Uri("http://etymo-apiservice:8080");
     })
     .AddHttpMessageHandler<AuthorizationHandler>();
 
