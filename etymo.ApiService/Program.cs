@@ -5,8 +5,41 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Shared.Models;
+using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// If TLS certificates are available in Kubernetes, configure Kestrel to use them
+var certPath = "/etc/tls/tls.crt";
+var keyPath = "/etc/tls/tls.key";
+
+if (File.Exists(certPath) && File.Exists(keyPath))
+{
+    try
+    {
+        // Log that we found certificates
+        Console.WriteLine("TLS certificates found, configuring HTTPS...");
+
+        // Load the certificate from the PEM files
+        var cert = X509Certificate2.CreateFromPemFile(certPath, keyPath);
+
+        // Configure Kestrel to use the certificate
+        builder.WebHost.ConfigureKestrel(options =>
+        {
+            options.ListenAnyIP(8080); // HTTP
+            options.ListenAnyIP(8443, listenOptions =>
+            {
+                listenOptions.UseHttps(cert);
+            }); // HTTPS
+        });
+
+        Console.WriteLine("HTTPS successfully configured on port 8443");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error configuring HTTPS: {ex.Message}");
+    }
+}
 
 var configuration = builder.Configuration;
 
@@ -71,7 +104,6 @@ var latinSuffixes = JsonConvert.DeserializeObject<Dictionary<string, string>>(la
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
-
 
 app.MapGet("/morphemelist", async (string wordListGuid, bool isPublic, string? userId, PostgresService postgresService) =>
 {
