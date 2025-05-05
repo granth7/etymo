@@ -37,18 +37,18 @@ spec:
           - name: apiservice-tls-volume
             mountPath: /etc/tls
             readOnly: true
-        volumes:
-          - name: apiservice-tls-volume
-            secret:
-              secretName: {{ .Values.apiservice.tls.secretName }}
-              items:
-              - key: tls.crt
-                path: tls.crt
-              - key: tls.key
-                path: tls.key
         ports:
         - containerPort: 8080
           name: http
         - containerPort: 8443
           name: https
+      volumes:
+        - name: apiservice-tls-volume
+          secret:
+            secretName: {{ .Values.apiservice.tls.secretName }}
+            items:
+            - key: tls.crt
+              path: tls.crt
+            - key: tls.key
+              path: tls.key
       terminationGracePeriodSeconds: 180
