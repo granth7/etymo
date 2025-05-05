@@ -1,8 +1,8 @@
 images:
   cache: docker.io/library/redis:7.4
   keycloak: quay.io/keycloak/keycloak:26.0
-  etymoapiservice: ghcr.io/granth7/etymo/etymo-apiservice:0.0.1-396
-  etymowebfrontend: ghcr.io/granth7/etymo/etymo-webfrontend:0.0.1-396
+  etymoapiservice: ghcr.io/granth7/etymo/etymo-apiservice:0.0.1-401
+  etymowebfrontend: ghcr.io/granth7/etymo/etymo-webfrontend:0.0.1-401
   aspiredashboard: mcr.microsoft.com/dotnet/aspire-dashboard:8.0
 
 expose:
@@ -31,7 +31,7 @@ expose:
 apiservice:
   tls:
     enabled: false
-    issuer: "letsencrypt-staging"
+    issuer: ""
     secretName: ""
 secrets:
   connectionStrings:
