@@ -34,13 +34,18 @@ spec:
         imagePullPolicy: IfNotPresent
         name: etymo-apiservice
         volumeMounts:
-          - name: tls-secret
-            mountPath: /etc/ssl/private
+          - name: {{ printf "%s-volume" .Values.apiservice.tls.secretName }}
+            mountPath: /etc/tls
             readOnly: true
         volumes:
-          - name: tls-secret
+          - name: {{ printf "%s-volume" .Values.apiservice.tls.secretName }}
             secret:
               secretName: {{ .Values.apiservice.tls.secretName }}
+              items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
         ports:
         - containerPort: 8080
           name: http
