@@ -34,11 +34,11 @@ spec:
         imagePullPolicy: IfNotPresent
         name: etymo-apiservice
         volumeMounts:
-          - name: {{ printf "%s-volume" .Values.apiservice.tls.secretName }}
+          - name: apiservice-tls-volume
             mountPath: /etc/tls
             readOnly: true
         volumes:
-          - name: {{ printf "%s-volume" .Values.apiservice.tls.secretName }}
+          - name: apiservice-tls-volume
             secret:
               secretName: {{ .Values.apiservice.tls.secretName }}
               items:
