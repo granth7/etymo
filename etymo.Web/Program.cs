@@ -5,10 +5,10 @@ using etymo.Web.Components.Handlers;
 using etymo.Web.Components.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +29,48 @@ builder.Services.AddHttpClient<MorphemeApiClient>(client =>
         client.BaseAddress = builder.Environment.IsDevelopment()
             ? new Uri("http://etymo-apiservice")
             : new Uri("https://etymo-apiservice:8443");
+    })
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        var handler = new HttpClientHandler();
+
+        // Only apply certificate handling in production where HTTPS is used
+        if (!builder.Environment.IsDevelopment())
+        {
+            // Try to load the mounted certificate
+            var certPath = "/etc/ssl/certs/apiservice.crt";
+            if (File.Exists(certPath))
+            {
+                try
+                {
+                    var cert = new X509Certificate2(certPath);
+
+                    // Create a certificate store with our trusted certificate
+                    var certStore = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
+                    certStore.Open(OpenFlags.ReadWrite);
+                    certStore.Add(cert);
+                    certStore.Close();
+
+                    Console.WriteLine("API service certificate added to trusted certificates");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to load API certificate: {ex.Message}");
+                    // Fallback to ignoring certificate validation in production
+                    handler.ServerCertificateCustomValidationCallback =
+                        (sender, cert, chain, sslPolicyErrors) => true;
+                }
+            }
+            else
+            {
+                Console.WriteLine("API certificate not found, using insecure connection");
+                // Fallback to ignoring certificate validation 
+                handler.ServerCertificateCustomValidationCallback =
+                    (sender, cert, chain, sslPolicyErrors) => true;
+            }
+        }
+
+        return handler;
     })
     .AddHttpMessageHandler<AuthorizationHandler>();
 
