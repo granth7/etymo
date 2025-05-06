@@ -32,4 +32,16 @@ spec:
           name: http
         - containerPort: 8443
           name: https
+        volumeMounts:
+        - name: api-cert-volume
+          mountPath: /etc/ssl/certs/apiservice.crt
+          subPath: tls.crt
+          readOnly: true
+      volumes:
+      - name: api-cert-volume
+        secret:
+          secretName: {{ .Values.apiservice.tls.secretName }}
+          items:
+          - key: tls.crt
+            path: tls.crt
       terminationGracePeriodSeconds: 180
