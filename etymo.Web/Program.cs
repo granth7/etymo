@@ -23,13 +23,14 @@ builder.Services.AddRazorComponents()
 builder.Services.AddHttpContextAccessor()
                 .AddTransient<AuthorizationHandler>();
 
+// Configure the HttpClient for MorphemeApiClient specifically with custom certificate handling
 builder.Services.AddHttpClient<MorphemeApiClient>(client =>
-    {
-        // Specify http in dev, https in prod.
-        client.BaseAddress = builder.Environment.IsDevelopment()
-            ? new Uri("http://etymo-apiservice")
-            : new Uri("https://etymo-apiservice:8443");
-    })
+{
+    // Specify http in dev, https in prod.
+    client.BaseAddress = builder.Environment.IsDevelopment()
+        ? new Uri("http://etymo-apiservice")
+        : new Uri("https://etymo-apiservice:8443");
+})
     .ConfigurePrimaryHttpMessageHandler(() =>
     {
         var handler = new HttpClientHandler();
@@ -37,7 +38,7 @@ builder.Services.AddHttpClient<MorphemeApiClient>(client =>
         // Only apply certificate handling in production where HTTPS is used
         if (!builder.Environment.IsDevelopment())
         {
-            // Try to load the mounted certificate
+            // Try to load the mounted certificate and only add it for the ApiService domain
             var certPath = "/etc/ssl/certs/apiservice.crt";
             if (File.Exists(certPath))
             {
@@ -45,28 +46,51 @@ builder.Services.AddHttpClient<MorphemeApiClient>(client =>
                 {
                     var cert = new X509Certificate2(certPath);
 
-                    // Create a certificate store with our trusted certificate
-                    var certStore = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
-                    certStore.Open(OpenFlags.ReadWrite);
-                    certStore.Add(cert);
-                    certStore.Close();
+                    // Instead of adding to the certificate store, set up a custom validator
+                    // that only accepts our self-signed cert for the apiservice domain
+                    handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
+                    {
+                        // If the request is to our API service, validate with our custom cert
+                        if (message.RequestUri?.Host == "etymo-apiservice")
+                        {
+                            // If there are errors, check if they're because of our self-signed cert
+                            if (errors != System.Net.Security.SslPolicyErrors.None)
+                            {
+                                // Compare the incoming certificate with our trusted one
+                                return cert?.GetCertHashString() ==
+                                       new X509Certificate2(certPath).GetCertHashString();
+                            }
+                            return true;
+                        }
 
-                    Console.WriteLine("API service certificate added to trusted certificates");
+                        // For all other domains, use normal certificate validation
+                        return errors == System.Net.Security.SslPolicyErrors.None;
+                    };
+
+                    Console.WriteLine("API service certificate configured for custom validation");
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Failed to load API certificate: {ex.Message}");
-                    // Fallback to ignoring certificate validation in production
-                    handler.ServerCertificateCustomValidationCallback =
-                        (sender, cert, chain, sslPolicyErrors) => true;
+                    // Fallback to ignoring certificate validation ONLY for the API service
+                    handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
+                    {
+                        // Only bypass validation for our API service
+                        return message.RequestUri?.Host == "etymo-apiservice" ||
+                               errors == System.Net.Security.SslPolicyErrors.None;
+                    };
                 }
             }
             else
             {
-                Console.WriteLine("API certificate not found, using insecure connection");
-                // Fallback to ignoring certificate validation 
-                handler.ServerCertificateCustomValidationCallback =
-                    (sender, cert, chain, sslPolicyErrors) => true;
+                Console.WriteLine("API certificate not found, using insecure connection for API service only");
+                // Fallback to ignoring certificate validation ONLY for the API service
+                handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
+                {
+                    // Only bypass validation for our API service
+                    return message.RequestUri?.Host == "etymo-apiservice" ||
+                           errors == System.Net.Security.SslPolicyErrors.None;
+                };
             }
         }
 
@@ -97,22 +121,22 @@ var cookieScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 builder.Services.AddHostedService<HeartbeatService>();
 
 builder.Services.AddAuthentication(options =>
-                {
-                    options.DefaultScheme = cookieScheme;
-                    options.DefaultChallengeScheme = oidcScheme;
-                    options.DefaultSignInScheme = cookieScheme;
-                })
+{
+    options.DefaultScheme = cookieScheme;
+    options.DefaultChallengeScheme = oidcScheme;
+    options.DefaultSignInScheme = cookieScheme;
+})
                 .AddKeycloakOpenIdConnect(oidcScheme, realm: "Etymo", oidcScheme, options =>
                 {
-                    options.Authority = environment != "Development" 
+                    options.Authority = environment != "Development"
                     ? "https://sso.hender.tech/realms/Etymo" // Explicitly use https in production
-                    : "http://localhost:8080/realms/Etymo"; 
+                    : "http://localhost:8080/realms/Etymo";
                     options.ClientId = "EtymoWeb";
                     options.ResponseType = OpenIdConnectResponseType.Code;
                     options.Scope.Add("openid profile email roles"); // Explicitly request roles
                     options.Scope.Add("etymo:all");
                     options.Scope.Add("offline_access");
-                    options.RequireHttpsMetadata = environment != "Development"; 
+                    options.RequireHttpsMetadata = environment != "Development";
                     options.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Name;
                     options.TokenValidationParameters.RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
                     options.SaveTokens = true;
@@ -148,6 +172,17 @@ builder.Services.AddAntiforgery(options =>
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IAntiforgeryService, AntiforgeryService>();
 builder.Services.AddScoped<UserStateService>();
+
+// Only use self-signed cert for apiservice's (MorphemeApiClient) httpclient.
+builder.Services.ConfigureHttpClientDefaults(httpClient =>
+{
+    // Use default certificate validation for all other HttpClients
+    httpClient.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        // Standard certificate validation for all other services
+        ServerCertificateCustomValidationCallback = null
+    });
+});
 
 var app = builder.Build();
 
