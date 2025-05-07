@@ -10,6 +10,9 @@ spec:
   - name: http
     port: 8080
     targetPort: 0
+  - name: https
+    port: 8443
+    targetPort: 0
   selector:
     app: keycloak
   type: ClusterIP
