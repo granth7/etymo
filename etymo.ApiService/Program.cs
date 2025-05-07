@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Shared.Models;
+using System;
 using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,6 +43,7 @@ if (File.Exists(certPath) && File.Exists(keyPath))
 }
 
 var configuration = builder.Configuration;
+var environment = builder.Configuration.GetValue<string>("Environment");
 
 var connectionString = Environment.GetEnvironmentVariable("existingPostgres");
 
@@ -81,8 +83,12 @@ builder.Services.AddAntiforgery(options =>
 builder.Services.AddAuthentication()
     .AddKeycloakJwtBearer("keycloak", realm: "Etymo", options =>
     {
-        options.Authority = "https://keycloak:8443"; // Specify HTTPS and port explicitly
-        options.RequireHttpsMetadata = true; // Enforce HTTPS
+        // Use the proper hostname that matches the certificate in production.
+        if (environment == "Production")
+        {
+            options.Authority = "https://sso.hender.tech";
+        }
+        options.RequireHttpsMetadata = environment != "Development";
         options.Audience = "etymo.api";
     });
 
