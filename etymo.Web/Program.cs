@@ -120,6 +120,15 @@ var cookieScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 
 builder.Services.AddHostedService<HeartbeatService>();
 
+// Register a named HttpClient specifically for Keycloak OIDC
+builder.Services.AddHttpClient("KeycloakBackchannel")
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        // Standard handler with default certificate validation for Keycloak
+        UseCookies = false,
+        CheckCertificateRevocationList = true
+    });
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = cookieScheme;
@@ -144,6 +153,23 @@ builder.Services.AddAuthentication(options =>
                     options.UseTokenLifetime = true;
                     // Ensure role claims are mapped
                     options.ClaimActions.MapJsonKey(ClaimTypes.Role, "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
+
+                    // Use our explicitly configured HttpClient for backchannel communication
+                    options.BackchannelHttpHandler = new HttpClientHandler
+                    {
+                        // Standard validation for Keycloak SSL certificate
+                        ServerCertificateCustomValidationCallback = null
+                    };
+
+                    // For diagnostic purposes, see if there are any backchannel errors
+                    options.Events = new Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectEvents
+                    {
+                        OnRemoteFailure = context =>
+                        {
+                            Console.WriteLine($"Remote failure: {context.Failure}");
+                            return Task.CompletedTask;
+                        }
+                    };
                 })
                 .AddCookie(cookieScheme, options =>
                 {
@@ -172,17 +198,6 @@ builder.Services.AddAntiforgery(options =>
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IAntiforgeryService, AntiforgeryService>();
 builder.Services.AddScoped<UserStateService>();
-
-// Only use self-signed cert for apiservice's (MorphemeApiClient) httpclient.
-builder.Services.ConfigureHttpClientDefaults(httpClient =>
-{
-    // Use default certificate validation for all other HttpClients
-    httpClient.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-    {
-        // Standard certificate validation for all other services
-        ServerCertificateCustomValidationCallback = null
-    });
-});
 
 var app = builder.Build();
 
