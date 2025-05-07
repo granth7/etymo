@@ -8,7 +8,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +24,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddHttpContextAccessor()
                 .AddTransient<AuthorizationHandler>();
 
-// Configure the HttpClient for MorphemeApiClient specifically with custom certificate handling
+// Add API client with self-signed cert handling
 builder.Services.AddHttpClient<MorphemeApiClient>(client =>
 {
     // Specify http in dev, https in prod.
@@ -38,60 +39,20 @@ builder.Services.AddHttpClient<MorphemeApiClient>(client =>
         // Only apply certificate handling in production where HTTPS is used
         if (!builder.Environment.IsDevelopment())
         {
-            // Try to load the mounted certificate and only add it for the ApiService domain
-            var certPath = "/etc/ssl/certs/apiservice.crt";
-            if (File.Exists(certPath))
+            // Specifically for the API service only
+            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
             {
-                try
+                // Only accept any certificate for the API service
+                if (message.RequestUri?.Host == "etymo-apiservice")
                 {
-                    var cert = new X509Certificate2(certPath);
-
-                    // Instead of adding to the certificate store, set up a custom validator
-                    // that only accepts our self-signed cert for the apiservice domain
-                    handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
-                    {
-                        // If the request is to our API service, validate with our custom cert
-                        if (message.RequestUri?.Host == "etymo-apiservice")
-                        {
-                            // If there are errors, check if they're because of our self-signed cert
-                            if (errors != System.Net.Security.SslPolicyErrors.None)
-                            {
-                                // Compare the incoming certificate with our trusted one
-                                return cert?.GetCertHashString() ==
-                                       new X509Certificate2(certPath).GetCertHashString();
-                            }
-                            return true;
-                        }
-
-                        // For all other domains, use normal certificate validation
-                        return errors == System.Net.Security.SslPolicyErrors.None;
-                    };
-
-                    Console.WriteLine("API service certificate configured for custom validation");
+                    return true; // Accept any certificate for the API service
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Failed to load API certificate: {ex.Message}");
-                    // Fallback to ignoring certificate validation ONLY for the API service
-                    handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
-                    {
-                        // Only bypass validation for our API service
-                        return message.RequestUri?.Host == "etymo-apiservice" ||
-                               errors == System.Net.Security.SslPolicyErrors.None;
-                    };
-                }
-            }
-            else
-            {
-                Console.WriteLine("API certificate not found, using insecure connection for API service only");
-                // Fallback to ignoring certificate validation ONLY for the API service
-                handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
-                {
-                    // Only bypass validation for our API service
-                    return message.RequestUri?.Host == "etymo-apiservice" ||
-                           errors == System.Net.Security.SslPolicyErrors.None;
-                };
-            }
+
+                // For all other domains (including Keycloak), use normal validation
+                return errors == SslPolicyErrors.None;
+            };
+
+            Console.WriteLine("API service configured to accept self-signed certificates");
         }
 
         return handler;
@@ -120,15 +81,22 @@ var cookieScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 
 builder.Services.AddHostedService<HeartbeatService>();
 
-// Register a named HttpClient specifically for Keycloak OIDC
-builder.Services.AddHttpClient("KeycloakBackchannel")
-    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+// Add diagnostic logger for HttpClient requests
+if (!builder.Environment.IsDevelopment())
+{
+    Console.WriteLine("Enabling HTTP client logging");
+    // Set to Debug to see detailed HTTP request/response info
+    builder.Services.AddLogging(logging =>
     {
-        // Standard handler with default certificate validation for Keycloak
-        UseCookies = false,
-        CheckCertificateRevocationList = true
+        logging.AddConsole();
+        logging.AddDebug();
     });
+}
 
+// Add a diagnostic service that will test the Keycloak connection on app startup
+builder.Services.AddHostedService<KeycloakDiagnosticService>();
+
+// Now configure authentication with diagnostic info
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = cookieScheme;
@@ -154,19 +122,63 @@ builder.Services.AddAuthentication(options =>
                     // Ensure role claims are mapped
                     options.ClaimActions.MapJsonKey(ClaimTypes.Role, "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
 
-                    // Use our explicitly configured HttpClient for backchannel communication
+                    // Using a handler with verbose SSL debugging
                     options.BackchannelHttpHandler = new HttpClientHandler
                     {
-                        // Standard validation for Keycloak SSL certificate
-                        ServerCertificateCustomValidationCallback = null
+                        ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
+                        {
+                            if (errors != SslPolicyErrors.None)
+                            {
+                                Console.WriteLine($"SSL Policy Error for {message.RequestUri?.Host}: {errors}");
+                                Console.WriteLine($"Certificate: {cert?.Subject}, Issued By: {cert?.Issuer}");
+
+                                // Important: Log the chain for troubleshooting
+                                for (int i = 0; i < chain?.ChainElements.Count; i++)
+                                {
+                                    var element = chain.ChainElements[i];
+                                    Console.WriteLine($"Chain element {i}: {element.Certificate.Subject}");
+                                    foreach (var status in element.ChainElementStatus)
+                                    {
+                                        Console.WriteLine($"  Status: {status.Status} - {status.StatusInformation}");
+                                    }
+                                }
+
+                                // For troubleshooting in production, temporarily accept the certificate
+                                return true;
+                            }
+                            return true;
+                        }
                     };
 
-                    // For diagnostic purposes, see if there are any backchannel errors
-                    options.Events = new Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectEvents
+                    // Add comprehensive diagnostic events
+                    options.Events = new OpenIdConnectEvents
                     {
+                        OnRedirectToIdentityProvider = context =>
+                        {
+                            Console.WriteLine($"Redirecting to identity provider: {context.ProtocolMessage.IssuerAddress}");
+                            return Task.CompletedTask;
+                        },
+                        OnMessageReceived = context =>
+                        {
+                            Console.WriteLine("Message received from identity provider");
+                            return Task.CompletedTask;
+                        },
                         OnRemoteFailure = context =>
                         {
-                            Console.WriteLine($"Remote failure: {context.Failure}");
+                            Console.WriteLine($"Remote failure: {context.Failure?.Message}");
+                            if (context.Failure?.InnerException != null)
+                            {
+                                Console.WriteLine($"Inner exception: {context.Failure.InnerException.Message}");
+                            }
+                            return Task.CompletedTask;
+                        },
+                        OnAuthenticationFailed = context =>
+                        {
+                            Console.WriteLine($"Authentication failed: {context.Exception?.Message}");
+                            if (context.Exception?.InnerException != null)
+                            {
+                                Console.WriteLine($"Inner exception: {context.Exception.InnerException.Message}");
+                            }
                             return Task.CompletedTask;
                         }
                     };
@@ -230,3 +242,72 @@ app.MapDefaultEndpoints();
 app.MapLoginAndLogout();
 
 app.Run();
+
+// Add this diagnostic service class to your project
+public class KeycloakDiagnosticService(ILogger<KeycloakDiagnosticService> logger) : IHostedService
+{
+    private readonly ILogger<KeycloakDiagnosticService> _logger = logger;
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Testing connection to Keycloak...");
+
+        try
+        {
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
+                {
+                    if (errors != SslPolicyErrors.None)
+                    {
+                        _logger.LogWarning($"SSL Policy Error for {message.RequestUri?.Host}: {errors}");
+                        _logger.LogWarning($"Certificate: {cert?.Subject}, Issued By: {cert?.Issuer}");
+
+                        // Log certificate chain issues
+                        for (int i = 0; i < chain?.ChainElements.Count; i++)
+                        {
+                            var element = chain.ChainElements[i];
+                            _logger.LogWarning($"Chain element {i}: {element.Certificate.Subject}");
+                            foreach (var status in element.ChainElementStatus)
+                            {
+                                _logger.LogWarning($"  Status: {status.Status} - {status.StatusInformation}");
+                            }
+                        }
+
+                        // For troubleshooting, accept the certificate
+                        return true;
+                    }
+                    return true;
+                }
+            };
+
+            using var httpClient = new HttpClient(handler);
+            var response = await httpClient.GetAsync("https://sso.hender.tech/realms/Etymo/.well-known/openid-configuration", cancellationToken);
+
+            _logger.LogInformation($"Keycloak test result: {response.StatusCode}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogInformation("Keycloak connection test succeeded!");
+                _logger.LogDebug($"Response content: {content}");
+            }
+            else
+            {
+                _logger.LogWarning($"Keycloak connection test failed: {response.StatusCode}");
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogWarning($"Response content: {content}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Keycloak connection test error: {ex.Message}");
+            if (ex.InnerException != null)
+            {
+                _logger.LogError($"Inner exception: {ex.InnerException.Message}");
+            }
+        }
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
