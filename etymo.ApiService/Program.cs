@@ -79,11 +79,12 @@ builder.Services.AddAntiforgery(options =>
 });
 
 builder.Services.AddAuthentication()
-                .AddKeycloakJwtBearer("keycloak", realm: "Etymo", options =>
-                {
-                    options.RequireHttpsMetadata = false;
-                    options.Audience = "etymo.api";
-                });
+    .AddKeycloakJwtBearer("keycloak", realm: "Etymo", options =>
+    {
+        options.Authority = "https://keycloak:8443"; // Specify HTTPS and port explicitly
+        options.RequireHttpsMetadata = true; // Enforce HTTPS
+        options.Audience = "etymo.api";
+    });
 
 if (configuration.GetValue<string>("ASPNETCORE_ENVIRONMENT") == "Testing")
 {
