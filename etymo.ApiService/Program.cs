@@ -81,16 +81,21 @@ builder.Services.AddAntiforgery(options =>
 });
 
 builder.Services.AddAuthentication()
-    .AddKeycloakJwtBearer("keycloak", realm: "Etymo", options =>
-    {
-        // Use the proper hostname that matches the certificate in production.
-        if (environment == "Production")
+    .AddKeycloakJwtBearer(
+        serviceName: (environment == "Development" || environment == "Testing") ? "localhost:8080" : "sso.hender.tech",
+        realm: "Etymo",
+        options =>
         {
-            options.Authority = "https://sso.hender.tech";
-        }
-        options.RequireHttpsMetadata = environment != "Development";
-        options.Audience = "etymo.api";
-    });
+            // Only require HTTPS for Production
+            options.RequireHttpsMetadata = environment == "Production";
+            options.Audience = "etymo.api";
+
+            // For production, explicitly set the metadata address to ensure HTTPS
+            if (environment == "Production")
+            {
+                options.MetadataAddress = $"https://sso.hender.tech/realms/Etymo/.well-known/openid-configuration";
+            }
+        });
 
 if (configuration.GetValue<string>("ASPNETCORE_ENVIRONMENT") == "Testing")
 {
