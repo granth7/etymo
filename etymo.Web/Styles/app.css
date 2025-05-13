@@ -25,6 +25,14 @@ body {
     .icon {
         background-image: url('etymo_logo_full_bianca.svg');
     }
+
+    .card.dark-text h2 {
+        color: #121212 !important; /* Dark text for specific cards */
+    }
+
+    .card.dark-text p {
+        color: #121212 !important; /* Dark text for specific cards */
+    }
 }
 
 /*.alert-success {

@@ -62,7 +62,7 @@
 
 <div class="container mx-auto px-4 py-8">
     <!-- Create New Word List Section -->
-    <div class="card bg-base-100 shadow-xl mb-8">
+    <div class="card bg-base-200 shadow-xl mb-8">
         <div class="card-body">
             <h2 class="card-title text-2xl font-bold">Create a word list</h2>
             <p class="mb-4">Create a private word list, or share it with the community! You can add up to 100 words with definitions.</p>
@@ -93,7 +93,7 @@
     </div>
 
     <!-- View Private Word Lists Section -->
-    <div class="card bg-base-100 shadow-xl mb-8">
+    <div class="card bg-base-200 shadow-xl mb-8">
         <div class="card-body">
             <h2 class="card-title text-2xl font-bold">Where's my stuff?</h2>
             <p class="mb-4">Don't want to see other lists? Tap 'Profile' to see the lists you created. Login required.</p>
@@ -124,7 +124,7 @@
     </div>
 
     <!-- Search Bar -->
-    <div class="card bg-base-100 shadow-xl mb-8">
+    <div class="card bg-base-200 shadow-xl mb-8">
         <div class="card-body">
             <h2 class="card-title text-2xl font-bold">Search Word Lists</h2>
             <div class="join w-full">
@@ -180,7 +180,7 @@
         {
             @foreach (var wordListOverview in popularWordListOverviews.Where(w => !w.IsHidden))
             {
-                <div class="card bg-base-100 shadow-xl">
+                <div class="card bg-base-200 shadow-xl">
                     <div class="card-body">
                         <div class="flex justify-between items-start">
                             <div>
@@ -193,7 +193,7 @@
                         <p class="my-2">@wordListOverview.Description</p>
 
                         <!-- Word Sample Preview -->
-                        <div class="bg-base-200 p-3 rounded-box my-2">
+                        <div class="bg-base-100 p-3 rounded-box my-2">
                             <h4 class="font-semibold mb-1">Sample Words:</h4>
                             <div class="flex flex-wrap gap-2">
                                 @if (wordListOverview.WordSample != null)

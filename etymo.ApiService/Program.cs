@@ -82,7 +82,7 @@ builder.Services.AddAntiforgery(options =>
 
 builder.Services.AddAuthentication()
     .AddKeycloakJwtBearer(
-        serviceName: (environment == "Development" || environment == "Testing") ? "localhost:8080" : "sso.hender.tech",
+        serviceName: (environment == "Development" || environment == "Testing") ? "keycloak" : "sso.hender.tech",
         realm: "Etymo",
         options =>
         {

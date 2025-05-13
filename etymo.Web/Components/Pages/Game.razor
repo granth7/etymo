@@ -129,7 +129,7 @@ else
                     var indexOfCurrentMorpheme = morphemesList.IndexOf(morpheme);
 
                     <div id="slide@(indexOfCurrentMorpheme)" class="carousel-item card relative w-full">
-                        <div class="card bg-@(morpheme.CardColor) place-content-center text-@(morpheme.CardColor)-content shadow-md">
+                        <div class="card bg-@(morpheme.CardColor) place-content-center text-@(morpheme.CardColor)-content shadow-md dark-text">
                             <div class="card-body grid" style="display: flex; align-items: center;">
                                 @* Add a hyphen before for suffixes, and after for prefixes in card title. *@
                                 @if (gameType.Contains("Suffixes"))
@@ -142,7 +142,7 @@ else
                                 }
                                 else
                                 {
-                                    <h2 class="card-title col-start-2 col-span-3 absolute -translate-y-1/2">@morphemesList[indexOfCurrentMorpheme].Kvp.Key</h2>
+                                    <h2 class="card-title col-start-2 col-span-3 absolute -translate-y-1/2 dark-theme-override">@morphemesList[indexOfCurrentMorpheme].Kvp.Key</h2>
                                 }
                             </div>
                         </div>
@@ -234,7 +234,7 @@ else
             @for (int i = 0; i < allMorphemes?.Length; i++)
             {
                 <div class="col-start-2 col-span-5 md:col-span-3 md:col-start-3">
-                    <div class="card bg-base-100 shadow-xl">
+                    <div class="card bg-base-100 shadow-xl dark-text">
                         <div class="card-body bg-@PickCardColor(i) text-@PickCardColor(i)-content rounded" style="padding: 10px">
                             <h2 class="card-title">@allMorphemes[i].Kvp.Key-</h2>
                             <p class="card-description">@allMorphemes[i].Kvp.Value</p>
