@@ -108,9 +108,12 @@ if (configuration.GetValue<string>("ASPNETCORE_ENVIRONMENT") == "Testing")
     .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>("TestAuth", _ => { });
 }
 
-builder.Services.AddDataProtection()
+if (environment == "Production")
+{
+    builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo("/app/dataprotection-keys"))
     .SetApplicationName("Etymo");
+}
 
 var app = builder.Build();
 var latinPrefixJson = File.ReadAllText(@"latinPrefixes.json");

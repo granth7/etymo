@@ -108,9 +108,12 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IAntiforgeryService, AntiforgeryService>();
 builder.Services.AddScoped<UserStateService>();
 
-builder.Services.AddDataProtection()
+if (environment == "Production")
+{
+    builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo("/app/dataprotection-keys"))
     .SetApplicationName("Etymo");
+}
 
 var app = builder.Build();
 
