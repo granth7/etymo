@@ -5,6 +5,7 @@ using etymo.Web.Components.Handlers;
 using etymo.Web.Components.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System.IdentityModel.Tokens.Jwt;
@@ -106,6 +107,10 @@ builder.Services.AddAntiforgery(options =>
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IAntiforgeryService, AntiforgeryService>();
 builder.Services.AddScoped<UserStateService>();
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/app/dataprotection-keys"))
+    .SetApplicationName("Etymo");
 
 var app = builder.Build();
 

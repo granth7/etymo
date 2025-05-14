@@ -2,6 +2,7 @@ using Dapper;
 using etymo.ApiService.Postgres;
 using etymo.ApiService.Postgres.Handlers;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Shared.Models;
@@ -106,6 +107,10 @@ if (configuration.GetValue<string>("ASPNETCORE_ENVIRONMENT") == "Testing")
     })
     .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>("TestAuth", _ => { });
 }
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/app/dataprotection-keys"))
+    .SetApplicationName("Etymo");
 
 var app = builder.Build();
 var latinPrefixJson = File.ReadAllText(@"latinPrefixes.json");
