@@ -33,11 +33,16 @@ spec:
         - containerPort: 8443
           name: https
         volumeMounts:
+        - name: dataprotection-keys
+          mountPath: /app/dataprotection-keys
         - name: api-cert-volume
           mountPath: /etc/ssl/certs/apiservice.crt
           subPath: tls.crt
           readOnly: true
       volumes:
+      - name: dataprotection-keys
+        persistentVolumeClaim:
+          claimName: dataprotection-keys-pvc
       - name: api-cert-volume
         secret:
           secretName: {{ .Values.apiservice.tls.secretName }}
