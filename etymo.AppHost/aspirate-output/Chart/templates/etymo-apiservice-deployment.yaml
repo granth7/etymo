@@ -18,6 +18,7 @@ spec:
       annotations: {}
       labels:
         app: etymo-apiservice
+        app.kubernetes.io/name: etymo-shared-key-pods
     spec:
       affinity:
         podAffinity:
@@ -29,8 +30,6 @@ spec:
                 values:
                 - etymo-shared-key-pods
             topologyKey: "kubernetes.io/hostname"
-      labels:
-        app.kubernetes.io/name: etymo-shared-key-pods
       containers:
       - args: []
         envFrom:
