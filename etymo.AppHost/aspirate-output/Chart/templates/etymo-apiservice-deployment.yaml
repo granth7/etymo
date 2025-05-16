@@ -19,6 +19,18 @@ spec:
       labels:
         app: etymo-apiservice
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - etymo-shared-key-pods
+            topologyKey: "kubernetes.io/hostname"
+      labels:
+        app.kubernetes.io/name: etymo-shared-key-pods
       containers:
       - args: []
         envFrom:
