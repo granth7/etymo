@@ -1,8 +1,8 @@
 images:
   cache: docker.io/library/redis:7.4
   keycloak: quay.io/keycloak/keycloak:26.0
-  etymoapiservice: ghcr.io/granth7/etymo/etymo-apiservice:0.0.1-463
-  etymowebfrontend: ghcr.io/granth7/etymo/etymo-webfrontend:0.0.1-463
+  etymoapiservice: ghcr.io/granth7/etymo/etymo-apiservice:0.0.1-467
+  etymowebfrontend: ghcr.io/granth7/etymo/etymo-webfrontend:0.0.1-467
   aspiredashboard: mcr.microsoft.com/dotnet/aspire-dashboard:8.0
 
 expose:
