@@ -21,7 +21,8 @@ Add the etymo helm repo:
 `helm repo add etymo https://granth7.github.io/etymo`
 
 Then install:
-helm install etymo https://granth7.github.io/etymo`
+
+`helm install etymo https://granth7.github.io/etymo`
 
 ### Flux install:
 The basic helm install uses default values that need to be configured.
