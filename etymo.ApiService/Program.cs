@@ -123,11 +123,6 @@ if (environment == "Production")
 }
 
 var app = builder.Build();
-var latinPrefixJson = File.ReadAllText(@"latinPrefixes.json");
-var latinPrefixes = JsonConvert.DeserializeObject<Dictionary<string, string>>(latinPrefixJson);
-
-var latinSuffixJson = File.ReadAllText(@"latinSuffixes.json");
-var latinSuffixes = JsonConvert.DeserializeObject<Dictionary<string, string>>(latinSuffixJson);
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
