@@ -50,10 +50,11 @@ Action<CookieBuilder> configureCookie = cookie =>
     cookie.SameSite = SameSiteMode.Lax; // Default for auth cookies
 };
 
+builder.Services.AddHostedService<HeartbeatService>();
+
 var oidcScheme = "keycloak";
 var cookieScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-
-builder.Services.AddHostedService<HeartbeatService>();
+var keycloakSettings = builder.Configuration.GetSection("KeycloakSettings").Get<KeycloakSettings>() ?? throw new InvalidOperationException("KeycloakSettings configuration is missing. Please ensure KeycloakSettings section is present in appsettings.json");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -61,38 +62,36 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme = oidcScheme;
     options.DefaultSignInScheme = cookieScheme;
 })
-                .AddKeycloakOpenIdConnect(oidcScheme, realm: "Etymo", oidcScheme, options =>
-                {
-                    options.Authority = environment != "Development"
-                    ? "https://sso.hender.tech/realms/Etymo" // Explicitly use https in production
-                    : "http://localhost:8080/realms/Etymo";
-                    options.ClientId = "EtymoWeb";
-                    options.ResponseType = OpenIdConnectResponseType.Code;
-                    options.Scope.Add("openid profile email roles"); // Explicitly request roles
-                    options.Scope.Add("etymo:all");
-                    options.Scope.Add("offline_access");
-                    options.RequireHttpsMetadata = environment != "Development";
-                    options.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Name;
-                    options.TokenValidationParameters.RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
-                    options.SaveTokens = true;
-                    options.SignInScheme = cookieScheme;
-                    options.UseTokenLifetime = true;
-                    // Ensure role claims are mapped
-                    options.ClaimActions.MapJsonKey(ClaimTypes.Role, "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
-                })
-                .AddCookie(cookieScheme, options =>
-                {
-                    options.Cookie.Name = ".Etymo.Auth";
-                    options.ExpireTimeSpan = TimeSpan.FromDays(30);
-                    options.SlidingExpiration = true;
-                    configureCookie(options.Cookie);
+    .AddKeycloakOpenIdConnect(oidcScheme, realm: "Etymo", oidcScheme, options =>
+    {
+        options.Authority = keycloakSettings.GetRealmUrl();
+        options.ClientId = "EtymoWeb";
+        options.ResponseType = OpenIdConnectResponseType.Code;
+        options.Scope.Add("openid profile email roles"); // Explicitly request roles
+        options.Scope.Add("etymo:all");
+        options.Scope.Add("offline_access");
+        options.RequireHttpsMetadata = environment != "Development";
+        options.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Name;
+        options.TokenValidationParameters.RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+        options.SaveTokens = true;
+        options.SignInScheme = cookieScheme;
+        options.UseTokenLifetime = true;
+        // Ensure role claims are mapped
+        options.ClaimActions.MapJsonKey(ClaimTypes.Role, "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
+    })
+    .AddCookie(cookieScheme, options =>
+    {
+        options.Cookie.Name = ".Etymo.Auth";
+        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+        options.SlidingExpiration = true;
+        configureCookie(options.Cookie);
 
-                    // Handle automatic refresh on token expiration
-                    options.Events = new CookieAuthenticationEvents
-                    {
-                        OnValidatePrincipal = TokenRefreshHandler.RefreshTokenIfNeeded
-                    };
-                });
+        // Handle automatic refresh on token expiration
+        options.Events = new CookieAuthenticationEvents
+        {
+            OnValidatePrincipal = TokenRefreshHandler.RefreshTokenIfNeeded
+        };
+    });
 
 // Add anti - forgery services
 builder.Services.AddAntiforgery(options =>

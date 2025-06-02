@@ -4,6 +4,8 @@ using etymo.ApiService.Postgres.Handlers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Shared.Models;
 using System;
@@ -81,22 +83,27 @@ builder.Services.AddAntiforgery(options =>
     options.HeaderName = "X-CSRF-TOKEN";
 });
 
-builder.Services.AddAuthentication()
-    .AddKeycloakJwtBearer(
-        serviceName: (environment == "Development" || environment == "Testing") ? "keycloak" : "sso.hender.tech",
-        realm: "Etymo",
-        options =>
-        {
-            // Only require HTTPS for Production
-            options.RequireHttpsMetadata = environment == "Production";
-            options.Audience = "etymo.api";
 
-            // For production, explicitly set the metadata address to ensure HTTPS
-            if (environment == "Production")
-            {
-                options.MetadataAddress = $"https://sso.hender.tech/realms/Etymo/.well-known/openid-configuration";
-            }
-        });
+var keycloakSettings = builder.Configuration.GetSection("KeycloakSettings").Get<KeycloakSettings>() ?? throw new InvalidOperationException("KeycloakSettings configuration is missing. Please ensure KeycloakSettings section is present in appsettings.json");
+bool isDevelopment = environment == "Development" || environment == "Testing";
+
+builder.Services.AddAuthentication()
+.AddKeycloakJwtBearer(
+    serviceName: isDevelopment ? "keycloak" : keycloakSettings.BaseDomain,
+    realm: "Etymo",
+    options =>
+    {
+        // Only require HTTPS for Production
+        options.RequireHttpsMetadata = environment == "Production";
+        options.Audience = "etymo.api";
+
+        // For production, explicitly set the metadata address to ensure HTTPS
+        if (environment == "Production")
+        {
+            options.MetadataAddress = keycloakSettings.GetWellKnownConfigUrl();
+        }
+    });
+
 
 if (configuration.GetValue<string>("ASPNETCORE_ENVIRONMENT") == "Testing")
 {

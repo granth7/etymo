@@ -370,13 +370,23 @@
         private string reportDetails = string.Empty;
         private bool reportReasonError = false;
 
-        protected override async Task OnInitializedAsync()
+        private bool hasRendered = false;
+
+        protected override void OnInitialized()
         {
             notificationServiceHelper = new NotificationServiceHelper();
             notificationServiceHelper.OnShowNotification += HandleShowNotification;
             notificationServiceHelper.OnClearNotification += HandleClearNotification;
+        }
 
-            await LoadWordListsAsync();
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender && !hasRendered)
+            {
+                hasRendered = true;
+                await LoadWordListsAsync();
+                StateHasChanged(); // Trigger re-render with the loaded data
+            }
         }
 
         private async Task LoadWordListsAsync(bool resetPage = true)
