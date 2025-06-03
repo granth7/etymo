@@ -9,24 +9,6 @@ public class MorphemeApiClient(HttpClient httpClient, IAntiforgeryService antifo
     public required List<Morpheme> Morphemes = [];
     private int morphemeCount = 0;
 
-    public async Task<Morpheme[]> GetMorphemesAsync(int maxItems = 5, string gameType = "latinPrefixes", CancellationToken cancellationToken = default)
-    {
-        await foreach (var morepheme in httpClient.GetFromJsonAsAsyncEnumerable<Morpheme>($"/morphemelist?gameType={gameType}", cancellationToken))
-        {
-            morphemeCount++;
-            if (morphemeCount > maxItems)
-            {
-                break;
-            }
-            if (morepheme is not null)
-            {
-                Morphemes.Add(morepheme);
-            }
-        }
-
-        return [.. Morphemes];
-    }
-
     public async Task<Morpheme[]> GetWordListAsync(int maxItems = 100, string wordListGuid = "", bool isPublic = true, string? userId = null, CancellationToken cancellationToken = default)
     {
         // Start with the base path

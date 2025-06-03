@@ -54,7 +54,8 @@ builder.Services.AddHostedService<HeartbeatService>();
 
 var oidcScheme = "keycloak";
 var cookieScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-var keycloakSettings = builder.Configuration.GetSection("KeycloakSettings").Get<KeycloakSettings>() ?? throw new InvalidOperationException("KeycloakSettings configuration is missing. Please ensure KeycloakSettings section is present in appsettings.json");
+var keycloakSettings = builder.Configuration.GetSection("KeycloakSettings").Get<KeycloakSettings>() 
+    ?? throw new InvalidOperationException("KeycloakSettings configuration is missing. Please ensure KeycloakSettings section is present in appsettings.json");
 
 builder.Services.AddAuthentication(options =>
 {
