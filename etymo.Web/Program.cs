@@ -42,10 +42,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
     // Instead of clearing, specify trusted proxies/networks
     options.KnownProxies.Add(IPAddress.Parse("10.0.100.55"));
-    options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse("10.0.100.0"), 24));
+    options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse("10.0.0.0"), 24));
 
     // Allow unlimited forwarded headers
-    options.ForwardLimit = null; 
+    options.ForwardLimit = null;
 });
 
 // Load the configuration
@@ -62,16 +62,7 @@ Action<CookieBuilder> configureCookie = cookie =>
     cookie.HttpOnly = true;
     cookie.IsEssential = true;
     cookie.SameSite = SameSiteMode.Lax; // Default for auth cookies
-
-    // Use SameAsRequest in production to rely on forwarded headers
-    if (environment == "Production")
-    {
-        cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-    }
-    else
-    {
-        cookie.SecurePolicy = CookieSecurePolicy.Always;
-    }
+    cookie.SecurePolicy = CookieSecurePolicy.Always;
 };
 
 builder.Services.AddHostedService<HeartbeatService>();
