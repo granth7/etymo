@@ -60,9 +60,18 @@ if (environment is not null)
 Action<CookieBuilder> configureCookie = cookie =>
 {
     cookie.HttpOnly = true;
-    cookie.SecurePolicy = CookieSecurePolicy.Always;
     cookie.IsEssential = true;
     cookie.SameSite = SameSiteMode.Lax; // Default for auth cookies
+
+    // Use SameAsRequest in production to rely on forwarded headers
+    if (environment == "Production")
+    {
+        cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    }
+    else
+    {
+        cookie.SecurePolicy = CookieSecurePolicy.Always;
+    }
 };
 
 builder.Services.AddHostedService<HeartbeatService>();
