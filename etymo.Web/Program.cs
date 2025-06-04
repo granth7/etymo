@@ -6,9 +6,10 @@ using etymo.Web.Components.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +33,20 @@ builder.Services.AddHttpClient<MorphemeApiClient>(client =>
         : new Uri("https://etymo-apiservice:8443");
 })
     .AddHttpMessageHandler<AuthorizationHandler>();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                              ForwardedHeaders.XForwardedProto |
+                              ForwardedHeaders.XForwardedHost;
+
+    // Instead of clearing, specify trusted proxies/networks
+    options.KnownProxies.Add(IPAddress.Parse("10.0.100.55"));
+    options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse("10.0.100.0"), 24));
+
+    // Allow unlimited forwarded headers
+    options.ForwardLimit = null; 
+});
 
 // Load the configuration
 var environment = builder.Configuration.GetValue<string>("Environment");
@@ -73,12 +88,19 @@ builder.Services.AddAuthentication(options =>
         options.Scope.Add("offline_access");
         options.RequireHttpsMetadata = environment != "Development";
         options.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Name;
-        options.TokenValidationParameters.RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+        options.TokenValidationParameters.RoleClaimType = ClaimTypes.Role;
         options.SaveTokens = true;
         options.SignInScheme = cookieScheme;
         options.UseTokenLifetime = true;
-        // Ensure role claims are mapped
-        options.ClaimActions.MapJsonKey(ClaimTypes.Role, "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
+
+        // Map Keycloak's role claims to the standard role claim type
+        options.ClaimActions.MapJsonKey(ClaimTypes.Role, "roles");
+        options.ClaimActions.MapJsonSubKey(ClaimTypes.Role, "realm_access", "roles");
+        options.ClaimActions.MapJsonSubKey(ClaimTypes.Role, "resource_access", "roles");
+
+        // Also clear the default role claim actions that might interfere
+        options.ClaimActions.DeleteClaim("role");
+        options.ClaimActions.DeleteClaim("roles");
     })
     .AddCookie(cookieScheme, options =>
     {
@@ -116,6 +138,8 @@ if (environment == "Production")
 }
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 // 1. Exception handling and Production policy setup.
 if (!app.Environment.IsDevelopment())
