@@ -141,6 +141,19 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
+// Debug middleware - remove after fixing
+app.Use(async (context, next) =>
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation("DEBUG - Remote IP: {RemoteIP}, Scheme: {Scheme}, Headers: X-Forwarded-Proto={Proto}, X-Forwarded-Host={Host}, X-Forwarded-For={For}",
+        context.Connection.RemoteIpAddress,
+        context.Request.Scheme,
+        context.Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? "MISSING",
+        context.Request.Headers["X-Forwarded-Host"].FirstOrDefault() ?? "MISSING",
+        context.Request.Headers["X-Forwarded-For"].FirstOrDefault() ?? "MISSING");
+    await next();
+});
+
 // 1. Exception handling and Production policy setup.
 if (!app.Environment.IsDevelopment())
 {
