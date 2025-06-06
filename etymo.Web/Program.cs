@@ -138,29 +138,6 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
-// Debug middleware - remove after fixing
-app.Use(async (context, next) => {
-    var logger = app.Services.GetRequiredService<ILogger<Program>>();
-
-    // Check cookies
-    foreach (var cookie in context.Request.Cookies)
-    {
-        if (cookie.Key.Contains("auth") || cookie.Key.Contains("token"))
-        {
-            logger.LogInformation("Cookie {Name}: {Size} bytes", cookie.Key, cookie.Value.Length);
-        }
-    }
-
-    // Check Authorization header
-    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-    if (authHeader != null)
-    {
-        logger.LogInformation("Authorization header: {Size} bytes", authHeader.Length);
-    }
-
-    await next();
-});
-
 // 1. Exception handling and Production policy setup.
 if (!app.Environment.IsDevelopment())
 {
