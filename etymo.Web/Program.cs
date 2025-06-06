@@ -36,16 +36,13 @@ builder.Services.AddHttpClient<MorphemeApiClient>(client =>
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
-                              ForwardedHeaders.XForwardedProto |
-                              ForwardedHeaders.XForwardedHost;
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
 
-    // Instead of clearing, specify trusted proxies/networks
-    options.KnownProxies.Add(IPAddress.Parse("10.0.100.55"));
-    options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse("10.0.0.0"), 24));
+    // Add your proxy networks (adjust these to match your infrastructure)
+    options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse("10.69.0.0"), 16)); // Cluster network
+    options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse("10.0.0.0"), 8));   // Broader internal network
 
-    // Allow unlimited forwarded headers
-    options.ForwardLimit = null;
+    options.KnownProxies.Add(IPAddress.Parse("10.69.1.174")); // The specific proxy IP we see
 });
 
 // Load the configuration
